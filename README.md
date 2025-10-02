@@ -1,112 +1,242 @@
 # Apollo Simulator
 
-A complete BMC (Baseboard Management Controller) simulator that runs OpenBMC in containers and supports PXE booting VMs using QEMU/KVM. Apollo provides a realistic server management environment for development and testing.
+A complete BMC (Baseboard Management Controller) emulator that provides realistic server management capabilities with PXE boot support. Apollo runs OpenBMC services in containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
 
-## 📚 Documentation
+## � Features
 
-- **[USAGE.md](USAGE.md)** - Complete usage guide with examples
-- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common issues and solutions
-- **[REDFISH_TEST_RESULTS.md](REDFISH_TEST_RESULTS.md)** - Redfish API test results
+- ✅ **BMC Emulation**: IPMI and Redfish API endpoints
+- ✅ **PXE Network Boot**: Full DHCP/TFTP/HTTP infrastructure  
+- ✅ **KVM Acceleration**: High-performance VM execution
+- ✅ **Ubuntu Installation**: Automated network-based OS deployment
+- ✅ **Container-Based**: Isolated, reproducible environment
+- ✅ **WSL2 Optimized**: Designed for Windows development workflows
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                        WSL2 Environment                      │
+│                     Apollo Simulator                        │
 │                                                              │
 │  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐ │
-│  │ OpenBMC        │  │ PXE Services │  │ QEMU VMs        │ │
-│  │ Container      │  │ Container    │  │ (Ubuntu)        │ │
+│  │ BMC Services   │  │ PXE Server   │  │ Virtual Machine │ │
+│  │ (Docker)       │  │ (Docker)     │  │ (QEMU/KVM)      │ │
 │  │                │  │              │  │                 │ │
-│  │ • IPMI         │  │ • DHCP       │  │ • KVM Accel     │ │
+│  │ • IPMI API     │  │ • DHCP       │  │ • Ubuntu 22.04  │ │
 │  │ • Redfish API  │  │ • TFTP       │  │ • Network Boot  │ │
-│  │ • Web UI       │  │ • HTTP       │  │ • VM Lifecycle  │ │
+│  │ • SSH Access   │  │ • HTTP Files │  │ • VNC Console   │ │
 │  └────────────────┘  └──────────────┘  └─────────────────┘ │
 │         │                    │                   │          │
 │         └────────────────────┴───────────────────┘          │
-│                      Shared Network                         │
-│                      (bridge: br0)                          │
+│                  Bridge Network (br0)                       │
+│                   192.168.100.0/24                          │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-## Features
+## 📋 Prerequisites
 
-- ✅ Real OpenBMC firmware (not emulated)
-- ✅ KVM hardware acceleration support
-- ✅ PXE boot infrastructure (DHCP/TFTP/HTTP)
-- ✅ Ubuntu autoinstall via network boot
-- ✅ BMC controls QEMU VM power/boot
-- ✅ Easy setup on WSL2
+- **WSL2** on Windows 10/11
+- **Docker** installed in WSL2
+- **Python 3.8+** with venv support
+- **KVM** support (nested virtualization)
 
-## Prerequisites
+## ⚡ Quick Start
 
-- Windows 11 with WSL2
-- Nested virtualization enabled (already configured ✅)
-- Docker or Podman installed in WSL2
-- Python 3.8+
-
-## Quick Start
-
+### 1. Initial Setup
 ```bash
-# 1. Setup environment
+# Clone and setup environment
+git clone <repository>
+cd apollo-simulator
+
+# Run setup (creates Python venv, downloads Ubuntu netboot files)
 ./setup.sh
-
-# 2. Start all services
-./start.sh
-
-# 3. Create and boot a VM
-python3 vm_manager.py create --name server01 --memory 2048 --cpus 2
-
-# 4. PXE boot the VM
-python3 vm_manager.py boot --name server01 --mode pxe
 ```
 
-## Components
+### 2. Start Services
+```bash
+# Start BMC and PXE services
+./start.sh
+```
 
-1. **OpenBMC Container** - Real BMC firmware
-2. **PXE Boot Server** - DHCP, TFTP, HTTP services
-3. **VM Manager** - QEMU VM lifecycle management
-4. **BMC API Bridge** - Connect BMC commands to QEMU
+### 3. Create and Boot VM
+```bash
+# Activate Python environment
+source venv/bin/activate
 
-## Access Points
+# Create a new VM
+python3 src/vm_manager.py create --name ubuntu01 --memory 2048 --cpus 2
 
-- OpenBMC Web UI: https://localhost:8443
-- IPMI: `ipmitool -I lanplus -H localhost -U root -P 0penBmc`
-- Redfish: https://localhost:8443/redfish/v1/
-- VM Serial Console: telnet localhost 5000
+# Start VM with PXE boot
+python3 src/vm_manager.py start --name ubuntu01 --boot pxe
 
-## Directory Structure
+# List all VMs
+python3 src/vm_manager.py list
+```
+
+### 4. Access Your VM
+```bash
+# VNC GUI access (install vncviewer)
+vncviewer localhost:5901
+
+# Serial console access
+telnet localhost 5001
+
+# Monitor DHCP/TFTP activity
+docker logs bmc-pxe
+```
+
+## 🎯 Service Endpoints
+
+| Service | Endpoint | Credentials |
+|---------|----------|-------------|
+| **BMC Redfish API** | `http://localhost:5000/redfish/v1/` | `admin:admin` |
+| **BMC SSH** | `ssh root@localhost -p 22` | `root:root` |
+| **PXE HTTP Server** | `http://localhost:8080/` | - |
+| **VM VNC Console** | `localhost:5901` | - |
+| **VM Serial Console** | `telnet localhost 5001` | - |
+
+## 📁 Project Structure
 
 ```
 apollo-simulator/
-├── containers/
-│   ├── openbmc/          # OpenBMC container config
-│   └── pxe-server/       # PXE boot services
-├── images/
-│   ├── ubuntu/           # Ubuntu ISO and netboot files
-│   └── vms/              # VM disk images
-├── scripts/
-│   ├── setup.sh          # Initial setup
-│   ├── start.sh          # Start all services
-│   └── stop.sh           # Stop all services
-├── src/
-│   ├── vm_manager.py     # QEMU VM management
-│   ├── bmc_bridge.py     # BMC to QEMU bridge
-│   └── pxe_config.py     # PXE configuration
-└── config/
-    ├── network.conf      # Network configuration
-    └── vms.yaml          # VM definitions
+├── 🐳 containers/
+│   ├── openbmc/              # BMC emulation container
+│   │   ├── Dockerfile
+│   │   ├── scripts/          # IPMI & Redfish APIs
+│   │   └── supervisord.conf
+│   └── pxe-server/           # PXE boot services
+│       ├── Dockerfile
+│       ├── config/           # DHCP & HTTP config
+│       └── start.sh
+├── 💾 images/
+│   ├── ubuntu/               # Ubuntu netboot files
+│   └── vms/                  # VM disk images (.qcow2)
+├── 🔧 src/
+│   ├── vm_manager.py         # VM lifecycle management
+│   └── bmc_bridge.py         # BMC to VM integration
+├── ⚙️ config/
+│   ├── network.conf          # Network settings
+│   └── vms.yaml              # VM configurations
+├── 📜 scripts & utilities
+│   ├── setup.sh              # Environment setup
+│   ├── start.sh              # Start all services
+│   ├── stop.sh               # Stop all services
+│   └── test.sh               # System tests
+└── 📋 logs/                  # Service logs
 ```
 
-## Next Steps
+## 🛠️ Management Commands
 
-After adding yourself to the kvm group, log out and log back in to WSL, then run:
-
+### VM Management
 ```bash
-# Verify KVM access
+# List all VMs and their status
+python3 src/vm_manager.py list
+
+# Create a new VM
+python3 src/vm_manager.py create --name <name> --memory <MB> --cpus <count>
+
+# Start VM (boot order: network first, then disk)
+python3 src/vm_manager.py start --name <name> --boot pxe
+
+# Start VM (disk boot only)
+python3 src/vm_manager.py start --name <name> --boot disk
+
+# Stop a VM
+python3 src/vm_manager.py stop --name <name>
+
+# Delete a VM (removes disk image)
+python3 src/vm_manager.py delete --name <name>
+```
+
+### Service Management
+```bash
+# Start all services
+./start.sh
+
+# Stop all services  
+./stop.sh
+
+# View service status
+docker ps
+
+# View logs
+docker logs bmc-openbmc  # BMC services
+docker logs bmc-pxe      # PXE services
+```
+
+### Makefile Commands
+```bash
+# View all available commands
+make help
+
+# Install dependencies
+make install
+
+# Start services
+make start
+
+# Create VM interactively
+make create-vm
+
+# Clean up everything
+make clean-all
+```
+
+## 🔧 Network Configuration
+
+- **Bridge Interface**: `br0` (192.168.100.1/24)
+- **DHCP Range**: 192.168.100.100 - 192.168.100.200
+- **VM Network**: Bridged to `br0` for PXE boot
+- **Container Network**: Host networking for service access
+
+## 🐛 Troubleshooting
+
+### PXE Boot Issues
+```bash
+# Check DHCP server logs
+docker logs bmc-pxe | grep -i dhcp
+
+# Verify bridge network
+ip addr show br0
+
+# Test VM network connectivity
+ping 192.168.100.1
+```
+
+### KVM/Virtualization Issues
+```bash
+# Check KVM device
 ls -la /dev/kvm
+
+# Verify user in KVM group
 groups | grep kvm
 
-# Test QEMU with KVM
+# Test KVM functionality
 qemu-system-x86_64 -enable-kvm -version
 ```
+
+### Container Issues
+```bash
+# Rebuild containers
+docker system prune -a
+./start.sh
+
+# Check container logs
+docker logs <container-name>
+```
+
+## 📚 Documentation
+
+- **[USAGE.md](USAGE.md)** - Detailed usage examples
+- **[TROUBLESHOOTING.md](TROUBLESHOOTING.md)** - Common problems and solutions
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
