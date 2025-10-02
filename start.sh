@@ -85,12 +85,10 @@ if [ -d "$SCRIPT_DIR/images/ubuntu" ]; then
     cp -r "$SCRIPT_DIR/images/ubuntu/." "$SCRIPT_DIR/pxe-data/tftp/"
 fi
 
+# Use host network so PXE server can serve DHCP on the bridge interface
 $CONTAINER_ENGINE run -d \
     --name bmc-pxe \
-    --network bmc-net \
-    -p 8080:80 \
-    -p 69:69/udp \
-    -p 67:67/udp \
+    --network host \
     --cap-add NET_ADMIN \
     -v "$SCRIPT_DIR/pxe-data/tftp:/tftp" \
     -v "$SCRIPT_DIR/pxe-data/http:/var/www/html/ubuntu" \
@@ -105,7 +103,7 @@ echo ""
 echo "Setting up VM network bridge..."
 if ! ip link show br0 &> /dev/null; then
     sudo ip link add name br0 type bridge
-    sudo ip addr add 192.168.100.254/24 dev br0
+    sudo ip addr add 192.168.100.1/24 dev br0
     sudo ip link set br0 up
     echo "Created bridge: br0"
 else

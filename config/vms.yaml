@@ -6,4 +6,14 @@ defaults:
   disk_size: 20
   memory: 2048
   network: br0
-vms: {}
+vms:
+  ubuntu01:
+    cpus: 2
+    disk: images/vms/ubuntu01.qcow2
+    mac: 52:54:00:c6:b6:1a
+    memory: 2048
+    name: ubuntu01
+    network: br0
+    serial_port: 5001
+    state: running
+    vnc_port: 1
