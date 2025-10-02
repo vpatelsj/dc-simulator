@@ -1,4 +1,4 @@
-# Apollo Simulator - Usage Guide
+# DC Simulator - Usage Guide
 
 ## Complete Setup and Usage Instructions
 
@@ -14,7 +14,7 @@ wsl --shutdown
 
 **Step 2: Run the setup script**
 ```bash
-cd /home/vapa/dev/apollo-simulator
+cd /home/vapa/dev/dc-simulator
 ./setup.sh
 ```
 

@@ -1,7 +1,7 @@
 .PHONY: help setup start stop test clean install create-vm list-vms
 
 help:
-	@echo "Apollo Simulator - Available Commands"
+	@echo "DC Simulator - Available Commands"
 	@echo "======================================"
 	@echo ""
 	@echo "Setup:"

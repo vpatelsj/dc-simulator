@@ -1,6 +1,6 @@
-# Apollo Simulator
+# DC Simulator
 
-A complete BMC (Baseboard Management Controller) emulator that provides realistic server management capabilities with PXE boot support. Apollo runs OpenBMC services in containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
+A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs OpenBMC services in docker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
 
 ## � Features
 
@@ -15,7 +15,7 @@ A complete BMC (Baseboard Management Controller) emulator that provides realisti
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     Apollo Simulator                        │
+│                      DC Simulator                           │
 │                                                              │
 │  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐ │
 │  │ BMC Services   │  │ PXE Server   │  │ Virtual Machine │ │
@@ -45,7 +45,7 @@ A complete BMC (Baseboard Management Controller) emulator that provides realisti
 ```bash
 # Clone and setup environment
 git clone <repository>
-cd apollo-simulator
+cd dc-simulator
 
 # Run setup (creates Python venv, downloads Ubuntu netboot files)
 ./setup.sh
@@ -97,7 +97,7 @@ docker logs bmc-pxe
 ## 📁 Project Structure
 
 ```
-apollo-simulator/
+dc-simulator/
 ├── 🐳 containers/
 │   ├── openbmc/              # BMC emulation container
 │   │   ├── Dockerfile

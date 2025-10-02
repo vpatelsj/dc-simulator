@@ -40,7 +40,7 @@ def service_root():
         "@odata.type": "#ServiceRoot.v1_0_0.ServiceRoot",
         "@odata.id": "/redfish/v1/",
         "Id": "RootService",
-        "Name": "Apollo Simulator Redfish Service",
+        "Name": "DC Simulator Redfish Service",
         "RedfishVersion": "1.0.0",
         "UUID": "12345678-1234-1234-1234-123456789012",
         "Systems": {

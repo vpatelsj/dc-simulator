@@ -43,7 +43,7 @@ The `setup.sh` script now defaults to Ubuntu 20.04 with multiple mirror fallback
 **Solution**: Use host networking mode (already configured)
 ```bash
 # The start.sh script now uses --network host
-docker run --network host apollo-openbmc
+docker run --network host dc-openbmc
 ```
 
 Access at: `http://localhost:5000/redfish/v1/`
@@ -101,8 +101,8 @@ cat /sys/module/kvm_intel/parameters/nested
 **Solution**:
 ```bash
 # Rebuild with no cache
-docker build --no-cache -t apollo-openbmc containers/openbmc/
-docker build --no-cache -t apollo-pxe containers/pxe-server/
+docker build --no-cache -t dc-openbmc containers/openbmc/
+docker build --no-cache -t dc-pxe containers/pxe-server/
 ```
 
 ---
@@ -181,7 +181,7 @@ docker restart bmc-pxe
 sudo usermod -a -G docker,kvm $USER
 
 # Fix directory permissions
-sudo chown -R $USER:$USER /home/vapa/dev/apollo-simulator
+sudo chown -R $USER:$USER /home/vapa/dev/dc-simulator
 
 # Log out and back in for group changes to take effect
 ```

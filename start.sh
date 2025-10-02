@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Start all Apollo Simulator services
+# Start all DC Simulator services
 
 set -e
 
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "=========================================="
-echo "Starting Apollo Simulator Services"
+echo "Starting DC Simulator Services"
 echo "=========================================="
 
 # Detect container engine
@@ -27,14 +27,14 @@ echo "Using: $CONTAINER_ENGINE"
 echo ""
 echo "Building OpenBMC container..."
 cd containers/openbmc
-$CONTAINER_ENGINE build -t apollo-openbmc .
+$CONTAINER_ENGINE build -t dc-openbmc .
 cd "$SCRIPT_DIR"
 
 # Build PXE server container
 echo ""
 echo "Building PXE server container..."
 cd containers/pxe-server
-$CONTAINER_ENGINE build -t apollo-pxe .
+$CONTAINER_ENGINE build -t dc-pxe .
 cd "$SCRIPT_DIR"
 
 # Create network if it doesn't exist
@@ -65,7 +65,7 @@ $CONTAINER_ENGINE run -d \
     --name bmc-openbmc \
     --network host \
     -v "$SCRIPT_DIR/logs:/var/log/openbmc" \
-    apollo-openbmc
+    dc-openbmc
 
 echo "OpenBMC started at:"
 echo "  - Redfish API: http://localhost:5000/redfish/v1/"
@@ -92,7 +92,7 @@ $CONTAINER_ENGINE run -d \
     --cap-add NET_ADMIN \
     -v "$SCRIPT_DIR/pxe-data/tftp:/tftp" \
     -v "$SCRIPT_DIR/pxe-data/http:/var/www/html/ubuntu" \
-    apollo-pxe
+    dc-pxe
 
 echo "PXE Server started at:"
 echo "  - HTTP: http://localhost:8080/"

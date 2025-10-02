@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Stop all Apollo Simulator services
+# Stop all DC Simulator services
 
 set -e
 
@@ -8,7 +8,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 echo "=========================================="
-echo "Stopping Apollo Simulator Services"
+echo "Stopping DC Simulator Services"
 echo "=========================================="
 
 # Detect container engine
