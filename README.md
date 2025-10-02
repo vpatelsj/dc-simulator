@@ -39,6 +39,8 @@ A local datacenter simulator that provides realistic server management capabilit
 - **Python 3.8+** with venv support
 - **KVM** support (nested virtualization)
 
+> **Note**: Setup script automatically downloads ~120MB of Ubuntu 22.04 netboot files for PXE boot functionality. These files are not included in the repository to keep it lightweight.
+
 ## ⚡ Quick Start
 
 ### 1. Initial Setup

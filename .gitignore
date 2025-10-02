@@ -53,6 +53,10 @@ images/vms/*.iso
 *.vmdk
 *.vdi
 
+# Ubuntu netboot files (downloaded during setup)
+images/ubuntu/*
+!images/ubuntu/.gitkeep
+
 # PXE Data (runtime files)
 pxe-data/http/*
 pxe-data/tftp/*
