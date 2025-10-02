@@ -97,20 +97,25 @@ create_directories() {
 install_python_deps() {
     echo -e "\n${YELLOW}Installing Python dependencies...${NC}"
     
-    # Check if venv exists
+    # Check if venv exists, if not create it
     if [ -d "venv" ]; then
         echo "Using existing virtual environment..."
-        source venv/bin/activate
-        pip install -q pyyaml requests jinja2
     else
-        echo "Virtual environment not found. Run 'make install' first."
-        echo "Or installing to user directory..."
-        pip3 install --user pyyaml requests jinja2 2>/dev/null || \
-        python3 -m pip install --user pyyaml requests jinja2 2>/dev/null || \
-        echo "Could not install Python packages. Please run 'make install' first."
+        echo "Creating virtual environment..."
+        python3 -m venv venv
+        echo -e "${GREEN}✓ Virtual environment created${NC}"
     fi
     
-    echo -e "${GREEN}✓ Python dependencies ready${NC}"
+    # Activate virtual environment and install packages
+    source venv/bin/activate
+    
+    # Upgrade pip first
+    pip install --upgrade pip
+    
+    # Install required packages
+    pip install pyyaml requests jinja2
+    
+    echo -e "${GREEN}✓ Python dependencies installed in virtual environment${NC}"
 }
 
 # Download Ubuntu netboot files
