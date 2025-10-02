@@ -1,0 +1,2 @@
+# This file ensures the tftp directory exists in git
+# PXE TFTP files will be generated at runtime

@@ -1,0 +1,151 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+*.log.*
+*.out
+
+# VM Images and Data
+images/vms/*.qcow2
+images/vms/*.img
+images/vms/*.raw
+images/vms/*.iso
+*.vmdk
+*.vdi
+
+# PXE Data (runtime files)
+pxe-data/http/*
+pxe-data/tftp/*
+!pxe-data/http/.gitkeep
+!pxe-data/tftp/.gitkeep
+
+# Container runtime files
+.dockerignore
+docker-compose.override.yml
+
+# Temporary files
+*.tmp
+*.temp
+.tmp/
+.temp/
+
+# SSH keys and certificates
+*.pem
+*.key
+*.crt
+*.csr
+id_rsa*
+id_ed25519*
+*.pub
+
+# Configuration overrides
+config/local.conf
+config/*.local
+config/secrets.*
+*.secrets
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# System files
+.Trash-*
+.nfs*
+
+# Docker volumes data
+volumes/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# Network configuration backups
+*.conf.bak
+*.yaml.bak
+
+# QEMU monitor sockets and lock files
+*.sock
+*.lock
+*.pid
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Local environment variables
+.env
+.env.local
+.env.*.local
+
+# Runtime directories
+run/
+var/run/
+
+# Core dumps
+core
+core.*
+
+# Firmware and BIOS files (if downloaded)
+*.bin
+*.rom
+firmware/
+
+# MAC addresses and hardware configs (auto-generated)
+mac_addresses.txt
+hardware_configs/

@@ -1,0 +1,19 @@
+# Requirements for BMC Emulator
+
+# Web framework for Redfish API
+flask>=2.3.0
+
+# YAML configuration
+pyyaml>=6.0
+
+# HTTP requests
+requests>=2.31.0
+
+# Template engine
+jinja2>=3.1.0
+
+# IPMI simulation (optional, for advanced features)
+# pyghmi>=1.5.0
+
+# Container management (optional)
+# docker>=6.1.0

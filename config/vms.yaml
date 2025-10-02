@@ -1,0 +1,9 @@
+defaults:
+  boot_order:
+  - network
+  - disk
+  cpus: 2
+  disk_size: 20
+  memory: 2048
+  network: br0
+vms: {}
