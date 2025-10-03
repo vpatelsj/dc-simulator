@@ -82,7 +82,10 @@ mkdir -p "$SCRIPT_DIR/pxe-data/http"
 
 if [ -d "$SCRIPT_DIR/images/ubuntu" ]; then
     echo "Copying PXE boot files..."
-    cp -r "$SCRIPT_DIR/images/ubuntu/." "$SCRIPT_DIR/pxe-data/tftp/"
+    # Remove existing files to avoid conflicts with symlinks/directories
+    # Use sudo since files may be owned by root from previous container runs
+    sudo rm -rf "$SCRIPT_DIR/pxe-data/tftp/"*
+    cp -rL "$SCRIPT_DIR/images/ubuntu/." "$SCRIPT_DIR/pxe-data/tftp/"
 fi
 
 # Use host network so PXE server can serve DHCP on the bridge interface

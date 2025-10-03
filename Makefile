@@ -116,7 +116,7 @@ clean:
 	@echo "Removing VM disk images..."
 	@rm -rf images/vms/*.qcow2 images/vms/*.pid
 	@echo "Removing logs..."
-	@rm -rf logs/*.log
+	@sudo rm -rf logs/*.log
 	@echo "✓ Cleanup complete"
 
 clean-all: clean
