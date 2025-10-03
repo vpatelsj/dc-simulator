@@ -13,7 +13,7 @@ A local datacenter simulator that provides realistic server management capabilit
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────┐
 │                      DC Simulator                           │
 │                                                              │
@@ -223,9 +223,9 @@ make logs         # View all service logs
 make setup-pxe    # Use alternative Ubuntu 20.04 LTS
 
 # Reset everything and start fresh
-make clean-everything
+make clean
 make install
-make setup
+make start
 ```
 
 ### VM Internet Connectivity Issues
