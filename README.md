@@ -122,6 +122,7 @@ dc-simulator/
 │   ├── setup.sh              # Environment setup
 │   ├── start.sh              # Start all services
 │   ├── stop.sh               # Stop all services
+│   ├── cleanup.sh            # Complete cleanup script
 │   └── test.sh               # System tests
 └── 📋 logs/                  # Service logs
 ```
@@ -157,6 +158,9 @@ python3 src/vm_manager.py delete --name <name>
 # Stop all services  
 ./stop.sh
 
+# Complete cleanup (stops everything and cleans up resources)
+./cleanup.sh
+
 # View service status
 docker ps
 
@@ -175,6 +179,9 @@ make install
 
 # Start services
 make start
+
+# Complete cleanup
+make cleanup
 
 # Create VM interactively
 make create-vm

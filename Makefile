@@ -1,4 +1,4 @@
-.PHONY: help setup start stop test clean install create-vm list-vms
+.PHONY: help setup start stop test clean install create-vm list-vms cleanup
 
 help:
 	@echo "DC Simulator - Available Commands"
@@ -24,7 +24,8 @@ help:
 	@echo "  make vm-stop       - Stop a VM (interactive)"
 	@echo ""
 	@echo "Cleanup:"
-	@echo "  make clean         - Stop services and clean up"
+	@echo "  make cleanup       - Complete cleanup (VMs, containers, network)"
+	@echo "  make clean         - Stop services and remove VM disks"
 	@echo "  make clean-all     - Full cleanup (includes venv)"
 	@echo ""
 
@@ -105,6 +106,9 @@ list-vms:
 	else \
 		python3 src/vm_manager.py list; \
 	fi
+
+cleanup:
+	@./cleanup.sh
 
 clean:
 	@./stop.sh
