@@ -122,13 +122,14 @@ install_python_deps() {
 download_ubuntu_netboot() {
     echo -e "\n${YELLOW}Downloading Ubuntu netboot files...${NC}"
     
-    UBUNTU_VERSION="22.04"
+    UBUNTU_VERSION="20.04"
     
+    # Ubuntu 22.04+ removed legacy netboot files, using 20.04 LTS instead
     # Try multiple URLs in case one is down
     NETBOOT_URLS=(
-        "http://archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
-        "http://us.archive.ubuntu.com/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
-        "http://mirrors.kernel.org/ubuntu/dists/jammy/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
+        "http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
+        "http://us.archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
+        "http://mirrors.kernel.org/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/netboot.tar.gz"
     )
     
     # Check if valid netboot files already exist
@@ -166,14 +167,14 @@ download_ubuntu_netboot() {
             return 1
         }
         cd "$SCRIPT_DIR"
-        echo -e "${GREEN}✓ Ubuntu netboot files downloaded and extracted${NC}"
+        echo -e "${GREEN}✓ Ubuntu 20.04 LTS netboot files downloaded and extracted${NC}"
     else
         echo -e "${YELLOW}⚠ Could not download Ubuntu netboot files automatically${NC}"
         echo ""
         echo "This is optional - you can:"
-        echo "  1. Skip for now and download later"
+        echo "  1. Skip for now and run: make setup-pxe for alternative setup"
         echo "  2. Use cloud-init or other provisioning methods"
-        echo "  3. Manually download from: https://releases.ubuntu.com/22.04/"
+        echo "  3. Manually download from: http://archive.ubuntu.com/ubuntu/dists/focal/main/installer-amd64/current/legacy-images/netboot/"
         echo ""
         echo "The BMC emulator will still work for VM management."
         echo "PXE boot will work once you add netboot files to images/ubuntu/"

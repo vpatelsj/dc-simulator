@@ -1,19 +1,11 @@
+# Default VM configurations
 defaults:
-  boot_order:
-  - network
-  - disk
+  memory: 2048  # MB
   cpus: 2
-  disk_size: 20
-  memory: 2048
+  disk_size: 20  # GB
   network: br0
-vms:
-  ubuntu01:
-    cpus: 2
-    disk: images/vms/ubuntu01.qcow2
-    mac: 52:54:00:12:19:75
-    memory: 2048
-    name: ubuntu01
-    network: br0
-    serial_port: 5001
-    state: running
-    vnc_port: 1
+  boot_order:
+    - network
+    - disk
+
+vms: {}
