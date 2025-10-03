@@ -1,29 +1,8 @@
 # DC Simulator
 
-A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs Ope## 🎯 Recommended Workflow
+A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs OpenBMC services in docker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
 
-```bash
-# 1. First time setup (one-time only)
-make install      # Install system dependencies
-
-# 2. Start everything
-make start        # Start services (auto-runs setup if needed)
-
-# 3. Create VMs
-make vm-start     # Create and start a VM (fully automated)
-make vm-start     # Create another VM (repeat as needed)
-make list-vms     # View all VMs
-
-# 4. Cleanup when done
-make clean        # Complete cleanup (removes everything)
-
-# Optional: Monitoring and troubleshooting
-make logs         # View service logs
-make status       # Check system health
-make test         # Run system tests
-```cker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
-
-## � Features
+## 🌟 Features
 
 - ✅ **BMC Emulation**: IPMI and Redfish API endpoints
 - ✅ **PXE Network Boot**: Full DHCP/TFTP/HTTP infrastructure  
@@ -199,27 +178,30 @@ make clean-services # Stop services and remove VM disks only
 make cleanup      # Legacy cleanup script
 ```
 
-## � Recommended Workflow
+## 🎯 Recommended Workflow
 
 ```bash
-# 1. First time setup
+# 1. First time setup (one-time only)
 make install      # Install system dependencies
-make setup        # Download Ubuntu netboot files and create venv
-make test         # Verify everything is working
 
-# 2. Daily usage
-make start        # Start services
-make create-vm    # Create and configure VMs
-make logs         # Monitor services
-make stop         # Stop services when done
+# 2. Start everything
+make start        # Start services (auto-runs setup if needed)
 
-# 3. Maintenance
+# 3. Create VMs
+make vm-start     # Create and start a VM (fully automated)
+make vm-start     # Create another VM (repeat as needed)
+make list-vms     # View all VMs
+
+# 4. Cleanup when done
+make clean        # Complete cleanup (removes everything)
+
+# Optional: Monitoring and troubleshooting
+make logs         # View service logs
 make status       # Check system health
-make cleanup      # Clean temporary files (keeps netboot files)
-make clean-all    # Full reset (removes venv too)
+make test         # Run system tests
 ```
 
-## �🔧 Network Configuration
+## 🔧 Network Configuration
 
 - **Bridge Interface**: `br0` (192.168.100.1/24)
 - **DHCP Range**: 192.168.100.100 - 192.168.100.200
