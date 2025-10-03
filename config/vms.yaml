@@ -10,7 +10,7 @@ vms:
   ubuntu01:
     cpus: 2
     disk: images/vms/ubuntu01.qcow2
-    mac: 52:54:00:c6:b6:1a
+    mac: 52:54:00:12:19:75
     memory: 2048
     name: ubuntu01
     network: br0

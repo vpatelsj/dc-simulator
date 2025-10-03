@@ -1,2 +1,3 @@
-# This file ensures the tftp directory exists in git
-# PXE TFTP files will be generated at runtime
+# Ubuntu netboot files directory
+# Files will be downloaded automatically during setup.sh
+# This directory should contain PXE boot files for Ubuntu installation
