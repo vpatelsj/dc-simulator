@@ -1,4 +1,4 @@
-.PHONY: help setup start stop test clean install create-vm list-vms cleanup
+.PHONY: help setup start stop test clean install list-vms cleanup clean-services clean-all
 
 help:
 	@echo "DC Simulator - Available Commands"
@@ -12,22 +12,21 @@ help:
 	@echo "  make status        - Show current system status"
 	@echo ""
 	@echo "Services:"
-	@echo "  make start         - Start OpenBMC and PXE server"
+	@echo "  make start         - Run setup and start OpenBMC and PXE server"
 	@echo "  make stop          - Stop all services"
 	@echo "  make restart       - Restart all services"
 	@echo "  make logs          - View service logs"
 	@echo ""
 	@echo "VMs:"
-	@echo "  make create-vm     - Create a new VM (interactive)"
-	@echo "  make list-vms      - List all VMs"
-	@echo "  make vm-start      - Start a VM (interactive)"
+	@echo "  make vm-start      - Create and start a new VM (auto, no prompts)"
 	@echo "  make vm-stop       - Stop a VM (interactive)"
+	@echo "  make list-vms      - List all VMs"
 	@echo ""
 	@echo "Cleanup:"
-	@echo "  make cleanup       - Complete cleanup (VMs, containers, network)"
-	@echo "  make clean         - Stop services and remove VM disks"
-	@echo "  make clean-all     - Full cleanup (includes venv)"
-	@echo "  make clean-everything - Nuclear cleanup (includes Ubuntu netboot)"
+	@echo "  make clean         - Complete cleanup (venv, netboot, VMs, everything)"
+	@echo "  make clean-all     - Clean without removing netboot files"
+	@echo "  make clean-services - Stop services and remove VM disks only"
+	@echo "  make cleanup       - Legacy cleanup (VMs, containers, network)"
 	@echo ""
 
 install:
@@ -67,7 +66,7 @@ setup-pxe:
 status:
 	@./status.sh
 
-start:
+start: setup
 	@./start.sh
 
 stop:
@@ -85,22 +84,6 @@ logs:
 	@echo "PXE Server logs:"
 	@docker logs --tail 50 bmc-pxe 2>/dev/null || echo "PXE container not running"
 
-create-vm:
-	@echo "Create New VM"
-	@echo "============="
-	@read -p "VM Name: " name; \
-	read -p "Memory (MB) [2048]: " memory; \
-	memory=$${memory:-2048}; \
-	read -p "CPUs [2]: " cpus; \
-	cpus=$${cpus:-2}; \
-	read -p "Disk Size (GB) [20]: " disk; \
-	disk=$${disk:-20}; \
-	if [ -d venv ]; then \
-		./venv/bin/python src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
-	else \
-		python3 src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
-	fi
-
 list-vms:
 	@if [ -d venv ]; then \
 		./venv/bin/python src/vm_manager.py list; \
@@ -111,34 +94,45 @@ list-vms:
 cleanup:
 	@./cleanup.sh
 
-clean:
+clean-services:
 	@./stop.sh
 	@echo "Removing VM disk images..."
 	@rm -rf images/vms/*.qcow2 images/vms/*.pid
 	@echo "Removing logs..."
 	@sudo rm -rf logs/*.log
-	@echo "✓ Cleanup complete"
+	@echo "✓ Services cleanup complete"
 
-clean-all: clean
+clean-all: clean-services
 	@echo "Removing virtual environment..."
 	@rm -rf venv
-	@echo "✓ Full cleanup complete"
+	@echo "✓ Full cleanup complete (netboot files preserved)"
 
-clean-everything: clean-all
+clean: clean-all
 	@echo "Removing Ubuntu netboot files..."
 	@rm -rf images/ubuntu/*
-	@echo "✓ Everything cleaned (including netboot files)"
-	@echo "Note: Run 'make setup' to re-download Ubuntu netboot files"
+	@echo "Removing VM configuration..."
+	@rm -f config/vms.yaml
+	@echo "✓ Complete cleanup finished (everything removed)"
+	@echo "Note: Run 'make start' to setup and start from scratch"
 
 # Quick actions
 vm-start:
-	@read -p "VM Name: " name; \
-	read -p "Boot mode (disk/pxe) [pxe]: " boot; \
-	boot=$${boot:-pxe}; \
+	@PYTHON_CMD=""; \
 	if [ -d venv ]; then \
-		./venv/bin/python src/vm_manager.py start --name $$name --boot $$boot; \
+		PYTHON_CMD="./venv/bin/python"; \
 	else \
-		python3 src/vm_manager.py start --name $$name --boot $$boot; \
+		PYTHON_CMD="python3"; \
+	fi; \
+	name="vm-$$(date +%s)-$$$$"; \
+	echo "Creating new VM with name: $$name"; \
+	$$PYTHON_CMD src/vm_manager.py create --name $$name --memory 2048 --cpus 2 --disk 20 && \
+	echo "Starting VM..."; \
+	output=$$($$PYTHON_CMD src/vm_manager.py start --name $$name --boot pxe 2>&1); \
+	echo "$$output"; \
+	vnc_port=$$(echo "$$output" | grep -oP 'VNC: localhost:\K[0-9]+'); \
+	if [ -n "$$vnc_port" ] && command -v vncviewer >/dev/null 2>&1; then \
+		echo "Opening TigerVNC..."; \
+		vncviewer localhost:$$vnc_port >/dev/null 2>&1 & \
 	fi
 
 vm-stop:

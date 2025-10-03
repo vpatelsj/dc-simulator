@@ -1,6 +1,27 @@
 # DC Simulator
 
-A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs OpenBMC services in docker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
+A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs Ope## 🎯 Recommended Workflow
+
+```bash
+# 1. First time setup (one-time only)
+make install      # Install system dependencies
+
+# 2. Start everything
+make start        # Start services (auto-runs setup if needed)
+
+# 3. Create VMs
+make vm-start     # Create and start a VM (fully automated)
+make vm-start     # Create another VM (repeat as needed)
+make list-vms     # View all VMs
+
+# 4. Cleanup when done
+make clean        # Complete cleanup (removes everything)
+
+# Optional: Monitoring and troubleshooting
+make logs         # View service logs
+make status       # Check system health
+make test         # Run system tests
+```cker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
 
 ## � Features
 
@@ -43,51 +64,45 @@ A local datacenter simulator that provides realistic server management capabilit
 
 ## ⚡ Quick Start
 
-### 1. Initial Setup
+### 1. Install Dependencies
 ```bash
-# Clone and setup environment
+# Clone repository
 git clone <repository>
 cd dc-simulator
 
-# Install dependencies and setup environment
+# Install system dependencies (one-time only)
 make install
-make setup
 ```
 
 ### 2. Start Services
 ```bash
-# Start BMC and PXE services
+# Start BMC and PXE services (includes setup automatically)
 make start
 ```
 
 ### 3. Create and Boot VM
 ```bash
-# Create a new VM (interactive)
-make create-vm
+# Create and start a new VM (fully automated, no prompts)
+make vm-start
 
-# Or create with specific parameters
-make vm-start  # Interactive start with boot options
+# TigerVNC will open automatically if installed
+# Otherwise: vncviewer localhost:5901
 
 # List all VMs
 make list-vms
 ```
 
-### 4. Access Your VM
+### 4. Cleanup
 ```bash
-# Install VNC viewer first
-sudo apt install tigervnc-viewer
-
-# VNC GUI access (recommended for Ubuntu installation)
-vncviewer localhost:5901
-
-# Serial console access (alternative)
-telnet localhost 5001
-
-# Monitor services
-make logs
+# Complete cleanup (removes everything)
+make clean
 ```
 
-> **Note**: New VMs start with empty disks. Use VNC to complete Ubuntu installation via PXE boot, then restart with disk boot for full networking.
+> **Note**: 
+> - `make start` automatically runs setup (downloads netboot, configures network, etc.)
+> - `make vm-start` creates VMs with random names and default specs (2GB RAM, 2 CPUs, 20GB disk)
+> - VMs boot via PXE and TigerVNC viewer opens automatically
+> - Install TigerVNC viewer: `sudo apt install tigervnc-viewer`
 
 ## 🎯 Service Endpoints
 
@@ -137,11 +152,10 @@ dc-simulator/
 
 ### VM Management
 ```bash
-# Interactive VM management (recommended)
-make create-vm    # Create a new VM with prompts
+# Simple VM management (recommended)
+make vm-start     # Create and start a new VM (auto, no prompts)
 make list-vms     # List all VMs and their status  
-make vm-start     # Start a VM with boot options
-make vm-stop      # Stop a VM
+make vm-stop      # Stop a VM (interactive)
 
 # Direct VM management (advanced)
 python3 src/vm_manager.py list
@@ -155,7 +169,7 @@ python3 src/vm_manager.py delete --name <name>
 ### Service Management
 ```bash
 # Recommended: Use make commands
-make start        # Start all services
+make start        # Start all services (includes setup)
 make stop         # Stop all services
 make restart      # Restart all services
 make status       # Show system status
@@ -174,15 +188,15 @@ docker logs bmc-pxe      # PXE service logs
 ```bash
 # Setup
 make help         # View all available commands
-make install      # Install dependencies
-make setup        # Initial setup (downloads netboot)
+make install      # Install dependencies (one-time)
+make setup        # Manual setup (optional, auto-runs with 'make start')
 make setup-pxe    # Alternative PXE setup if netboot fails
 
 # Cleanup Options
-make cleanup      # Complete cleanup (interactive)
-make clean        # Remove VM disks and logs
-make clean-all    # Full cleanup (includes venv)
-make clean-everything  # Nuclear cleanup (includes netboot files)
+make clean        # Complete cleanup (venv, netboot, VMs, everything)
+make clean-all    # Clean without removing netboot files
+make clean-services # Stop services and remove VM disks only
+make cleanup      # Legacy cleanup script
 ```
 
 ## � Recommended Workflow
