@@ -39,7 +39,7 @@ A local datacenter simulator that provides realistic server management capabilit
 - **Python 3.8+** with venv support
 - **KVM** support (nested virtualization)
 
-> **Note**: Setup script automatically downloads ~120MB of Ubuntu 22.04 netboot files for PXE boot functionality. These files are not included in the repository to keep it lightweight.
+> **Note**: Setup automatically downloads ~60MB of Ubuntu 20.04 LTS netboot files for PXE boot functionality. These files are not included in the repository to keep it lightweight.
 
 ## ⚡ Quick Start
 
@@ -49,29 +49,27 @@ A local datacenter simulator that provides realistic server management capabilit
 git clone <repository>
 cd dc-simulator
 
-# Run setup (creates Python venv, downloads Ubuntu netboot files)
-./setup.sh
+# Install dependencies and setup environment
+make install
+make setup
 ```
 
 ### 2. Start Services
 ```bash
 # Start BMC and PXE services
-./start.sh
+make start
 ```
 
 ### 3. Create and Boot VM
 ```bash
-# Activate Python environment
-source venv/bin/activate
+# Create a new VM (interactive)
+make create-vm
 
-# Create a new VM
-python3 src/vm_manager.py create --name ubuntu01 --memory 2048 --cpus 2
-
-# Start VM with PXE boot
-python3 src/vm_manager.py start --name ubuntu01 --boot pxe
+# Or create with specific parameters
+make vm-start  # Interactive start with boot options
 
 # List all VMs
-python3 src/vm_manager.py list
+make list-vms
 ```
 
 ### 4. Access Your VM
@@ -82,8 +80,8 @@ vncviewer localhost:5901
 # Serial console access
 telnet localhost 5001
 
-# Monitor DHCP/TFTP activity
-docker logs bmc-pxe
+# Monitor services
+make logs
 ```
 
 ## 🎯 Service Endpoints
@@ -131,66 +129,75 @@ dc-simulator/
 
 ### VM Management
 ```bash
-# List all VMs and their status
+# Interactive VM management (recommended)
+make create-vm    # Create a new VM with prompts
+make list-vms     # List all VMs and their status  
+make vm-start     # Start a VM with boot options
+make vm-stop      # Stop a VM
+
+# Direct VM management (advanced)
 python3 src/vm_manager.py list
-
-# Create a new VM
 python3 src/vm_manager.py create --name <name> --memory <MB> --cpus <count>
-
-# Start VM (boot order: network first, then disk)
 python3 src/vm_manager.py start --name <name> --boot pxe
-
-# Start VM (disk boot only)
 python3 src/vm_manager.py start --name <name> --boot disk
-
-# Stop a VM
 python3 src/vm_manager.py stop --name <name>
-
-# Delete a VM (removes disk image)
 python3 src/vm_manager.py delete --name <name>
 ```
 
 ### Service Management
 ```bash
-# Start all services
-./start.sh
+# Recommended: Use make commands
+make start        # Start all services
+make stop         # Stop all services
+make restart      # Restart all services
+make status       # Show system status
+make logs         # View service logs
+make test         # Test system readiness
 
-# Stop all services  
-./stop.sh
-
-# Complete cleanup (stops everything and cleans up resources)
-./cleanup.sh
-
-# View service status
-docker ps
-
-# View logs
-docker logs bmc-openbmc  # BMC services
-docker logs bmc-pxe      # PXE services
+# Advanced: Direct script access
+./start.sh        # Start services directly
+./stop.sh         # Stop services directly
+docker ps         # View container status
+docker logs bmc-openbmc  # BMC service logs
+docker logs bmc-pxe      # PXE service logs
 ```
 
-### Makefile Commands
+### Setup & Cleanup Commands
 ```bash
-# View all available commands
-make help
+# Setup
+make help         # View all available commands
+make install      # Install dependencies
+make setup        # Initial setup (downloads netboot)
+make setup-pxe    # Alternative PXE setup if netboot fails
 
-# Install dependencies
-make install
-
-# Start services
-make start
-
-# Complete cleanup
-make cleanup
-
-# Create VM interactively
-make create-vm
-
-# Clean up everything
-make clean-all
+# Cleanup Options
+make cleanup      # Complete cleanup (interactive)
+make clean        # Remove VM disks and logs
+make clean-all    # Full cleanup (includes venv)
+make clean-everything  # Nuclear cleanup (includes netboot files)
 ```
 
-## 🔧 Network Configuration
+## � Recommended Workflow
+
+```bash
+# 1. First time setup
+make install      # Install system dependencies
+make setup        # Download Ubuntu netboot files and create venv
+make test         # Verify everything is working
+
+# 2. Daily usage
+make start        # Start services
+make create-vm    # Create and configure VMs
+make logs         # Monitor services
+make stop         # Stop services when done
+
+# 3. Maintenance
+make status       # Check system health
+make cleanup      # Clean temporary files (keeps netboot files)
+make clean-all    # Full reset (removes venv too)
+```
+
+## �🔧 Network Configuration
 
 - **Bridge Interface**: `br0` (192.168.100.1/24)
 - **DHCP Range**: 192.168.100.100 - 192.168.100.200
@@ -199,9 +206,30 @@ make clean-all
 
 ## 🐛 Troubleshooting
 
+### Quick Diagnostics
+```bash
+make status       # Check overall system status
+make test         # Run system readiness tests
+make logs         # View all service logs
+```
+
+### Setup Issues
+```bash
+# If netboot download fails
+make setup-pxe    # Use alternative Ubuntu 20.04 LTS
+
+# Reset everything and start fresh
+make clean-everything
+make install
+make setup
+```
+
 ### PXE Boot Issues
 ```bash
-# Check DHCP server logs
+# Check service logs
+make logs
+
+# Check DHCP server specifically
 docker logs bmc-pxe | grep -i dhcp
 
 # Verify bridge network
@@ -225,12 +253,16 @@ qemu-system-x86_64 -enable-kvm -version
 
 ### Container Issues
 ```bash
-# Rebuild containers
-docker system prune -a
-./start.sh
+# Restart services cleanly
+make stop
+make start
 
-# Check container logs
-docker logs <container-name>
+# Complete reset
+make cleanup
+make start
+
+# Check container status
+docker ps -a
 ```
 
 ## 📚 Documentation

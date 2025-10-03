@@ -132,6 +132,21 @@ cleanup_files() {
         echo -e "${GREEN}✓ PXE data cleaned${NC}"
     fi
     
+    # Ask about cleaning Ubuntu netboot files
+    if [ -d "images/ubuntu" ] && [ "$(ls -A images/ubuntu 2>/dev/null)" ]; then
+        echo "Found Ubuntu netboot files (~60MB)"
+        read -p "Do you want to clean up Ubuntu netboot files? (will need re-download) (y/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Cleaning Ubuntu netboot files..."
+            rm -rf images/ubuntu/* 2>/dev/null || true
+            echo -e "${GREEN}✓ Ubuntu netboot files removed${NC}"
+            echo -e "${YELLOW}Note: Run 'make setup' or 'make setup-pxe' to re-download${NC}"
+        else
+            echo "Keeping Ubuntu netboot files"
+        fi
+    fi
+    
     echo -e "${GREEN}✓ Temporary files cleaned${NC}"
 }
 

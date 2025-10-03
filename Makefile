@@ -27,6 +27,7 @@ help:
 	@echo "  make cleanup       - Complete cleanup (VMs, containers, network)"
 	@echo "  make clean         - Stop services and remove VM disks"
 	@echo "  make clean-all     - Full cleanup (includes venv)"
+	@echo "  make clean-everything - Nuclear cleanup (includes Ubuntu netboot)"
 	@echo ""
 
 install:
@@ -122,6 +123,12 @@ clean-all: clean
 	@echo "Removing virtual environment..."
 	@rm -rf venv
 	@echo "✓ Full cleanup complete"
+
+clean-everything: clean-all
+	@echo "Removing Ubuntu netboot files..."
+	@rm -rf images/ubuntu/*
+	@echo "✓ Everything cleaned (including netboot files)"
+	@echo "Note: Run 'make setup' to re-download Ubuntu netboot files"
 
 # Quick actions
 vm-start:
