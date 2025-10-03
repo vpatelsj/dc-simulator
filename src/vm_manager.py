@@ -25,7 +25,17 @@ class VMManager:
             with open(self.config_path, 'r') as f:
                 self.config = yaml.safe_load(f)
         except FileNotFoundError:
-            self.config = {'defaults': {}, 'vms': {}}
+            # Try to copy from template
+            template_path = Path(self.config_path).parent / 'vms.yaml.template'
+            if template_path.exists():
+                import shutil
+                shutil.copy(template_path, self.config_path)
+                with open(self.config_path, 'r') as f:
+                    self.config = yaml.safe_load(f)
+                print(f"Created {self.config_path} from template")
+            else:
+                # Fallback to empty config
+                self.config = {'defaults': {}, 'vms': {}}
     
     def save_config(self):
         """Save VM configuration"""

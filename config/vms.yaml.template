@@ -1,0 +1,16 @@
+# VM Configuration Template
+# This file is automatically copied to vms.yaml during setup
+# DO NOT edit this template - it will be overwritten
+# Edit vms.yaml instead (which is git-ignored)
+
+defaults:
+  memory: 2048  # MB
+  cpus: 2
+  disk_size: 20  # GB
+  network: br0
+  boot_order:
+    - network
+    - disk
+
+# VMs will be added here automatically when created
+vms: {}

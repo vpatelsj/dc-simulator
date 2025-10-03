@@ -120,7 +120,8 @@ dc-simulator/
 │   └── bmc_bridge.py         # BMC to VM integration
 ├── ⚙️ config/
 │   ├── network.conf          # Network settings
-│   └── vms.yaml              # VM configurations
+│   ├── vms.yaml              # VM configurations (runtime state, git-ignored)
+│   └── vms.yaml.template     # Template for vms.yaml
 ├── 📜 scripts & utilities
 │   ├── setup.sh              # Environment setup
 │   ├── start.sh              # Start all services
@@ -129,6 +130,8 @@ dc-simulator/
 │   └── test.sh               # System tests
 └── 📋 logs/                  # Service logs
 ```
+
+> **Note**: `config/vms.yaml` is automatically generated and tracks VM runtime state (running/stopped). It's git-ignored to avoid conflicts. The `vms.yaml.template` file is the tracked version.
 
 ## 🛠️ Management Commands
 

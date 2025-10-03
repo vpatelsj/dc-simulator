@@ -252,20 +252,13 @@ BMC_IP=192.168.100.10
 PXE_SERVER_IP=192.168.100.1
 EOF
 
-    # VM defaults
-    cat > config/vms.yaml << 'EOF'
-# Default VM configurations
-defaults:
-  memory: 2048  # MB
-  cpus: 2
-  disk_size: 20  # GB
-  network: br0
-  boot_order:
-    - network
-    - disk
-
-vms: {}
-EOF
+    # VM defaults - only create if doesn't exist (runtime state file)
+    if [ ! -f "config/vms.yaml" ]; then
+        echo "Creating vms.yaml from template..."
+        cp config/vms.yaml.template config/vms.yaml
+    else
+        echo "vms.yaml already exists (preserving existing VMs)"
+    fi
 
     echo -e "${GREEN}✓ Configuration files created${NC}"
 }

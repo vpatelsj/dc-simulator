@@ -88,6 +88,9 @@ config/*.local
 config/secrets.*
 *.secrets
 
+# Runtime VM state (changes when VMs start/stop)
+config/vms.yaml
+
 # Database files
 *.db
 *.sqlite
