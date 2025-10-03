@@ -74,15 +74,20 @@ make list-vms
 
 ### 4. Access Your VM
 ```bash
-# VNC GUI access (install vncviewer)
+# Install VNC viewer first
+sudo apt install tigervnc-viewer
+
+# VNC GUI access (recommended for Ubuntu installation)
 vncviewer localhost:5901
 
-# Serial console access
+# Serial console access (alternative)
 telnet localhost 5001
 
 # Monitor services
 make logs
 ```
+
+> **Note**: New VMs start with empty disks. Use VNC to complete Ubuntu installation via PXE boot, then restart with disk boot for full networking.
 
 ## 🎯 Service Endpoints
 
@@ -222,6 +227,23 @@ make setup-pxe    # Use alternative Ubuntu 20.04 LTS
 make clean-everything
 make install
 make setup
+```
+
+### VM Internet Connectivity Issues
+```bash
+# If Ubuntu installer can't reach mirrors or VMs have no internet:
+
+# 1. Restart services (this reconfigures NAT automatically)
+make restart
+
+# 2. Verify NAT rules are in place
+sudo iptables -t nat -L POSTROUTING -n | grep 192.168.100
+
+# 3. If still not working, check the main interface
+ip route | grep default
+
+# 4. The start script should have configured this automatically
+# If it didn't work, check setup.sh or start.sh for errors
 ```
 
 ### PXE Boot Issues

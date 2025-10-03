@@ -110,8 +110,34 @@ else
     echo "Bridge already exists: br0"
 fi
 
-# Connect container network to bridge
-# Note: This may require additional configuration depending on your setup
+# Setup NAT and forwarding for VM internet access
+echo "Configuring VM internet access..."
+MAIN_IFACE=$(ip route | grep default | awk '{print $5}' | head -n 1)
+
+if [ -n "$MAIN_IFACE" ]; then
+    # Add NAT rule if not exists
+    if ! sudo iptables -t nat -C POSTROUTING -s 192.168.100.0/24 -o "$MAIN_IFACE" -j MASQUERADE 2>/dev/null; then
+        sudo iptables -t nat -A POSTROUTING -s 192.168.100.0/24 -o "$MAIN_IFACE" -j MASQUERADE
+        echo "  Added NAT rule"
+    fi
+    
+    # Add forwarding rules if not exists
+    if ! sudo iptables -C FORWARD -i br0 -o "$MAIN_IFACE" -j ACCEPT 2>/dev/null; then
+        sudo iptables -A FORWARD -i br0 -o "$MAIN_IFACE" -j ACCEPT
+    fi
+    
+    if ! sudo iptables -C FORWARD -i "$MAIN_IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; then
+        sudo iptables -A FORWARD -i "$MAIN_IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    fi
+    
+    # Disable bridge netfilter
+    sudo sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1 || true
+    sudo sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1 || true
+    
+    echo "  VM internet access configured via $MAIN_IFACE"
+else
+    echo "  Warning: Could not detect main network interface"
+fi
 
 echo ""
 echo "=========================================="
