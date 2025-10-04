@@ -19,6 +19,7 @@ help:
 	@echo ""
 	@echo "VMs:"
 	@echo "  make create-vm     - Create a new VM (interactive)"
+	@echo "  make create-pxe-vm - Create VM from Packer image (fast deploy)"
 	@echo "  make list-vms      - List all VMs"
 	@echo "  make vm-start      - Start a VM (interactive)"
 	@echo "  make vm-stop       - Stop a VM (interactive)"
@@ -94,11 +95,60 @@ create-vm:
 	cpus=$${cpus:-2}; \
 	read -p "Disk Size (GB) [20]: " disk; \
 	disk=$${disk:-20}; \
-	if [ -d venv ]; then \
-		./venv/bin/python src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
+	read -p "Use Packer base image? (y/n) [n]: " use_packer; \
+	if [ "$$use_packer" = "y" ] || [ "$$use_packer" = "Y" ]; then \
+		base_image="packer/output-ubuntu-airgap/ubuntu-server-airgap"; \
+		if [ ! -f "$$base_image" ]; then \
+			echo "Error: Packer base image not found at $$base_image"; \
+			echo "Build it first with: cd packer && packer build airgap-ubuntu.pkr.hcl"; \
+			exit 1; \
+		fi; \
+		if [ -d venv ]; then \
+			./venv/bin/python src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk --base-image $$base_image; \
+		else \
+			python3 src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk --base-image $$base_image; \
+		fi; \
 	else \
-		python3 src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
+		if [ -d venv ]; then \
+			./venv/bin/python src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
+		else \
+			python3 src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk; \
+		fi; \
 	fi
+
+create-pxe-vm:
+	@echo "Create VM from Packer Image"
+	@echo "============================"
+	@base_image="packer/output-ubuntu-airgap/ubuntu-server-airgap"; \
+	if [ ! -f "$$base_image" ]; then \
+		echo "❌ Packer base image not found at $$base_image"; \
+		echo ""; \
+		echo "Build it first with:"; \
+		echo "  cd packer && packer build airgap-ubuntu.pkr.hcl"; \
+		echo ""; \
+		echo "This will take ~3 minutes and create a pre-installed Ubuntu image."; \
+		exit 1; \
+	fi; \
+	echo "✓ Found Packer base image"; \
+	echo ""; \
+	read -p "VM Name [ubuntu-pxe-01]: " name; \
+	name=$${name:-ubuntu-pxe-01}; \
+	read -p "Memory (MB) [2048]: " memory; \
+	memory=$${memory:-2048}; \
+	read -p "CPUs [2]: " cpus; \
+	cpus=$${cpus:-2}; \
+	read -p "Disk Size (GB) [20]: " disk; \
+	disk=$${disk:-20}; \
+	echo ""; \
+	echo "Creating VM from Packer image..."; \
+	if [ -d venv ]; then \
+		./venv/bin/python src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk --base-image $$base_image; \
+	else \
+		python3 src/vm_manager.py create --name $$name --memory $$memory --cpus $$cpus --disk $$disk --base-image $$base_image; \
+	fi; \
+	echo ""; \
+	echo "✓ VM created! Start it with:"; \
+	echo "  make vm-start   (or directly: python3 src/vm_manager.py start --name $$name --boot pxe)"
 
 list-vms:
 	@if [ -d venv ]; then \

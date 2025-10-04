@@ -14,9 +14,10 @@ from pathlib import Path
 
 class VMManager:
     def __init__(self, config_path='config/vms.yaml'):
-        self.config_path = config_path
+        self.base_dir = Path(__file__).parent.parent.resolve()  # Apollo simulator root
+        self.config_path = self.base_dir / config_path
         self.load_config()
-        self.vm_dir = Path('images/vms')
+        self.vm_dir = self.base_dir / 'images' / 'vms'
         self.vm_dir.mkdir(parents=True, exist_ok=True)
     
     def load_config(self):
@@ -32,7 +33,7 @@ class VMManager:
         with open(self.config_path, 'w') as f:
             yaml.dump(self.config, f, default_flow_style=False)
     
-    def create_disk(self, name, size_gb=20):
+    def create_disk(self, name, size_gb=20, base_image=None):
         """Create a VM disk image"""
         disk_path = self.vm_dir / f'{name}.qcow2'
         
@@ -40,19 +41,42 @@ class VMManager:
             print(f"Disk already exists: {disk_path}")
             return str(disk_path)
         
-        cmd = [
-            'qemu-img', 'create',
-            '-f', 'qcow2',
-            str(disk_path),
-            f'{size_gb}G'
-        ]
+        if base_image:
+            # Convert to absolute path
+            base_path = Path(base_image)
+            if not base_path.is_absolute():
+                base_path = self.base_dir / base_path
+            
+            if not base_path.exists():
+                print(f"Base image not found: {base_path}")
+                return None
+            
+            # Create a copy-on-write image based on the base image
+            cmd = [
+                'qemu-img', 'create',
+                '-f', 'qcow2',
+                '-b', str(base_path),
+                '-F', 'qcow2',
+                str(disk_path),
+                f'{size_gb}G'
+            ]
+            print(f"Creating disk from base image: {base_path}")
+            print(f"  Target: {disk_path} ({size_gb}GB)")
+        else:
+            # Create an empty disk
+            cmd = [
+                'qemu-img', 'create',
+                '-f', 'qcow2',
+                str(disk_path),
+                f'{size_gb}G'
+            ]
+            print(f"Creating empty disk: {disk_path} ({size_gb}GB)")
         
-        print(f"Creating disk: {disk_path} ({size_gb}GB)")
         subprocess.run(cmd, check=True)
         
         return str(disk_path)
     
-    def create_vm(self, name, memory=2048, cpus=2, disk_size=20):
+    def create_vm(self, name, memory=2048, cpus=2, disk_size=20, base_image=None):
         """Create a new VM configuration"""
         
         if name in self.config['vms']:
@@ -60,7 +84,7 @@ class VMManager:
             return False
         
         # Create disk
-        disk_path = self.create_disk(name, disk_size)
+        disk_path = self.create_disk(name, disk_size, base_image)
         
         # Create VM configuration
         vm_config = {
@@ -82,6 +106,8 @@ class VMManager:
         print(f"  Memory: {memory}MB")
         print(f"  CPUs: {cpus}")
         print(f"  Disk: {disk_path}")
+        if base_image:
+            print(f"  Base Image: {base_image}")
         print(f"  MAC: {vm_config['mac']}")
         print(f"  VNC: :{vm_config['vnc_port']}")
         
@@ -90,19 +116,44 @@ class VMManager:
     def build_qemu_command(self, vm_config, boot_mode='disk'):
         """Build QEMU command line"""
         
+        # Choose NIC type based on boot mode
+        # e1000 has built-in PXE ROM, virtio-net needs external ROM
+        if boot_mode in ['pxe', 'pxe-only']:
+            nic_model = 'e1000'
+        else:
+            nic_model = 'virtio-net-pci'
+        
         cmd = [
             'qemu-system-x86_64',
             '-name', vm_config['name'],
             '-m', str(vm_config['memory']),
             '-smp', str(vm_config['cpus']),
             '-drive', f"file={vm_config['disk']},if=virtio,format=qcow2",
-            '-netdev', f"bridge,id=net0,br={vm_config['network']}",
-            '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
+        ]
+        
+        # Network configuration
+        if boot_mode in ['pxe', 'pxe-only']:
+            # For PXE boot, use user networking with QEMU's built-in TFTP/DHCP
+            # This is a workaround for WSL2 bridge networking limitations with TFTP
+            tftp_root = str(self.base_dir / 'pxe-data' / 'tftp')
+            cmd.extend([
+                '-netdev', f"user,id=net0,tftp={tftp_root},bootfile=pxelinux.0",
+                '-device', f"{nic_model},netdev=net0,mac={vm_config['mac']}",
+            ])
+        else:
+            # For disk boot, use bridge networking (standard datacenter simulation mode)
+            network = vm_config.get('network', 'br0')
+            cmd.extend([
+                '-netdev', f"bridge,id=net0,br={network}",
+                '-device', f"{nic_model},netdev=net0,mac={vm_config['mac']}",
+            ])
+        
+        cmd.extend([
             '-vnc', f":{vm_config['vnc_port']}",
             '-serial', f"telnet::{vm_config['serial_port']},server,nowait",
             '-daemonize',
             '-pidfile', str(self.vm_dir / f"{vm_config['name']}.pid")
-        ]
+        ])
         
         # Add KVM acceleration if available
         if os.path.exists('/dev/kvm'):
@@ -272,6 +323,7 @@ def main():
     create_parser.add_argument('--memory', type=int, default=2048, help='Memory in MB')
     create_parser.add_argument('--cpus', type=int, default=2, help='Number of CPUs')
     create_parser.add_argument('--disk', type=int, default=20, help='Disk size in GB')
+    create_parser.add_argument('--base-image', help='Base image to clone from (for pre-installed OS)')
     
     # Start VM
     start_parser = subparsers.add_parser('start', help='Start a VM')
@@ -296,7 +348,8 @@ def main():
     manager = VMManager()
     
     if args.command == 'create':
-        manager.create_vm(args.name, args.memory, args.cpus, args.disk)
+        manager.create_vm(args.name, args.memory, args.cpus, args.disk, 
+                         getattr(args, 'base_image', None))
     elif args.command == 'start':
         manager.start_vm(args.name, args.boot)
     elif args.command == 'stop':

@@ -1,0 +1,53 @@
+#cloud-config
+# Cloud-init configuration for customizing Ubuntu cloud image
+
+# Set password for ubuntu user
+chpasswd:
+  expire: false
+  users:
+    - name: ubuntu
+      password: ubuntu
+      type: text
+
+# Enable password authentication for SSH
+ssh_pwauth: true
+
+# Configure users
+users:
+  - default
+  - name: ubuntu
+    groups: [adm, cdrom, dip, plugdev, lxd, sudo]
+    lock_passwd: false
+    shell: /bin/bash
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh_authorized_keys: []
+
+# Package updates and installation
+package_update: true
+package_upgrade: false
+packages:
+  - qemu-guest-agent
+  - vim
+  - curl
+  - wget
+  - net-tools
+
+# Run commands after boot
+runcmd:
+  # Ensure SSH is properly configured
+  - sed -i 's/^#*PasswordAuthentication.*/PasswordAuthentication yes/' /etc/ssh/sshd_config
+  - sed -i 's/^#*PubkeyAuthentication.*/PubkeyAuthentication yes/' /etc/ssh/sshd_config
+  - systemctl restart ssh
+  
+  # Enable qemu-guest-agent
+  - systemctl enable qemu-guest-agent
+  - systemctl start qemu-guest-agent
+  
+  # Set timezone
+  - ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+  
+  # Create marker file
+  - echo "Cloud image customized on $(date)" > /etc/image-build-info
+  
+# Final message
+final_message: "Cloud image customization completed in $UPTIME seconds"

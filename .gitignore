@@ -50,6 +50,9 @@ images/vms/*.qcow2
 images/vms/*.img
 images/vms/*.raw
 images/vms/*.iso
+images/custom/*.qcow2
+images/iso/*.iso
+packer/output-ubuntu-airgap
 *.vmdk
 *.vdi
 

@@ -5,7 +5,17 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+
+# Configure firewall for bridge traffic
+echo ""
+echo "Configuring firewall for bridge traffic..."
+sudo iptables -C FORWARD -i br0 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -i br0 -j ACCEPT
+sudo iptables -C FORWARD -o br0 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -o br0 -j ACCEPT
+
+# Disable netfilter on bridge (critical for VM connectivity)
+sudo sysctl -w net.bridge.bridge-nf-call-iptables=0 >/dev/null 2>&1
+sudo sysctl -w net.bridge.bridge-nf-call-ip6tables=0 >/dev/null 2>&1
+echo "Firewall rules configured for br0""$SCRIPT_DIR"
 
 echo "=========================================="
 echo "Starting DC Simulator Services"
@@ -109,6 +119,13 @@ if ! ip link show br0 &> /dev/null; then
 else
     echo "Bridge already exists: br0"
 fi
+
+# Configure firewall rules for bridge traffic
+echo ""
+echo "Configuring firewall for bridge traffic..."
+sudo iptables -C FORWARD -i br0 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -i br0 -j ACCEPT
+sudo iptables -C FORWARD -o br0 -j ACCEPT 2>/dev/null || sudo iptables -I FORWARD -o br0 -j ACCEPT
+echo "Firewall rules configured for br0"
 
 # Connect container network to bridge
 # Note: This may require additional configuration depending on your setup

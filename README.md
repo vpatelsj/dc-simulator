@@ -38,12 +38,20 @@ A local datacenter simulator that provides realistic server management capabilit
 - **Docker** installed in WSL2
 - **Python 3.8+** with venv support
 - **KVM** support (nested virtualization)
+- **HashiCorp Packer** (optional, for custom image building)
 
-> **Note**: Setup script automatically downloads ~120MB of Ubuntu 22.04 netboot files for PXE boot functionality. These files are not included in the repository to keep it lightweight.
+> **Note**: The simulator supports two deployment modes:
+> 1. **Legacy PXE Boot**: Downloads ~120MB Ubuntu netboot files for installer wizard
+> 2. **Modern Image Deployment**: Uses Packer to build custom pre-installed images (~700MB)
 
 ## ⚡ Quick Start
 
-### 1. Initial Setup
+Choose between two deployment approaches:
+
+### Approach A: Legacy PXE Boot (Manual Install)
+
+Traditional netboot with Ubuntu installation wizard:
+
 ```bash
 # Clone and setup environment
 git clone <repository>
@@ -52,6 +60,42 @@ cd dc-simulator
 # Run setup (creates Python venv, downloads Ubuntu netboot files)
 ./setup.sh
 ```
+
+### Approach B: Modern Image Deployment (Recommended for Air-Gapped)
+
+Pre-built images deployed via PXE (realistic datacenter automation):
+
+```bash
+# Clone and setup environment
+git clone <repository>
+cd dc-simulator
+
+# Run complete build and deployment pipeline
+./scripts/build_and_deploy.sh
+
+# This will:
+# 1. Download Ubuntu ISO (~1.4GB, one-time)
+# 2. Build custom image with Packer (~20 min)
+# 3. Setup PXE deployment infrastructure
+# 4. Start all services
+
+# Or run steps individually:
+./scripts/download_ubuntu_iso.sh      # Download ISO
+./scripts/build_packer_image.sh       # Build with Packer
+./scripts/setup_pxe_deployment.sh     # Configure PXE
+./start.sh                            # Start services
+```
+
+**Benefits of Image Deployment:**
+- ✅ **No Internet Required**: Perfect for air-gapped environments
+- ✅ **Fast Deployment**: 2-5 minutes vs 30+ minutes manual install
+- ✅ **Consistent**: Every deployment is identical
+- ✅ **Automated**: No manual intervention needed
+- ✅ **Enterprise-Grade**: How real datacenters deploy servers
+
+See [`packer/README.md`](packer/README.md) for detailed Packer documentation.
+
+---
 
 ### 2. Start Services
 ```bash
@@ -197,7 +241,76 @@ make clean-all
 - **VM Network**: Bridged to `br0` for PXE boot
 - **Container Network**: Host networking for service access
 
-## 🐛 Troubleshooting
+## � Deployment Methods Comparison
+
+### Legacy PXE Boot (Netboot Installer)
+
+**How it works:**
+- VM boots from network
+- Downloads kernel and initrd (~50MB)
+- Launches Ubuntu installation wizard
+- Manual or semi-automated installation
+- 20-30 minutes per VM
+
+**Best for:**
+- Learning PXE boot process
+- Testing different install options
+- Development environments
+- When customization per VM is needed
+
+**Commands:**
+```bash
+./setup.sh                            # Downloads netboot files
+python3 src/vm_manager.py start --name ubuntu01 --boot pxe
+```
+
+---
+
+### Modern Image Deployment (Packer-built Images)
+
+**How it works:**
+- Build custom image once with Packer
+- VM boots from network
+- Downloads pre-installed image (~700MB)
+- Writes directly to disk
+- Reboots into working system
+- 2-5 minutes per VM
+
+**Best for:**
+- Production simulations
+- Air-gapped/offline environments
+- Consistent deployments
+- Enterprise datacenter scenarios
+- Scaling to many VMs
+
+**Commands:**
+```bash
+./scripts/build_and_deploy.sh         # Complete pipeline
+python3 src/vm_manager.py start --name ubuntu01 --boot pxe
+```
+
+**Image Building:**
+```bash
+# Build custom image
+cd packer
+packer init airgap-ubuntu.pkr.hcl
+packer build airgap-ubuntu.pkr.hcl
+
+# Customize via variables
+packer build \
+  -var 'disk_size=40960' \
+  -var 'memory=4096' \
+  airgap-ubuntu.pkr.hcl
+```
+
+See [`packer/README.md`](packer/README.md) for detailed documentation on:
+- Building custom images
+- Customizing installations
+- Security hardening
+- Troubleshooting builds
+- Creating role-specific images
+
+## �🐛 Troubleshooting
 
 ### PXE Boot Issues
 ```bash

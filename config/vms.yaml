@@ -7,13 +7,30 @@ defaults:
   memory: 2048
   network: br0
 vms:
-  ubuntu01:
+  test-deploy:
     cpus: 2
-    disk: images/vms/ubuntu01.qcow2
-    mac: 52:54:00:12:19:75
+    disk: /home/vapa/dev/apollo-simulator/images/vms/test-deploy.qcow2
+    mac: 52:54:00:a4:e6:8b
     memory: 2048
-    name: ubuntu01
+    name: test-deploy
     network: br0
-    serial_port: 5001
+    serial_port: 5002
     state: running
-    vnc_port: 1
+    vnc_port: 5902
+  ubuntu-pxe-01:
+    bmc_port: 6230
+    boot_order:
+    - network
+    - disk
+    cpus: 2
+    disk: images/vms/ubuntu-pxe-base.qcow2
+    ip: 10.0.0.101
+    mac: '52:54:00:12:34:01'
+    memory: 2048
+    name: ubuntu-pxe-01
+    network: br0
+    redfish_port: 8000
+    serial_port: 5001
+    ssh_port: 2201
+    state: running
+    vnc_port: 5901
