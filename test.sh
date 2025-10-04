@@ -1,6 +1,8 @@
 #!/bin/bash
 
-# Quick test script to verify the setup
+# Quick test script to verify t# Test 3: Check Python
+echo ""
+echo "3. Checking Python..."setup
 
 echo "BMC Emulator - Quick Test"
 echo "=========================="
@@ -29,20 +31,7 @@ else
     echo "   ✗ QEMU not installed"
 fi
 
-# Test 3: Check container engine
-echo ""
-echo "3. Checking container engine..."
-if command -v docker &> /dev/null; then
-    echo "   ✓ Docker found"
-    docker --version
-elif command -v podman &> /dev/null; then
-    echo "   ✓ Podman found"
-    podman --version
-else
-    echo "   ✗ No container engine found"
-fi
-
-# Test 4: Check Python
+# Test 3: Check Python
 echo ""
 echo "4. Checking Python..."
 if command -v python3 &> /dev/null; then
@@ -52,9 +41,9 @@ else
     echo "   ✗ Python 3 not found"
 fi
 
-# Test 5: Check network
+# Test 4: Check network
 echo ""
-echo "5. Checking network..."
+echo "4. Checking network..."
 if ip link show br0 &> /dev/null; then
     echo "   ✓ Bridge br0 exists"
     ip addr show br0 | grep "inet "

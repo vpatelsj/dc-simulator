@@ -1,29 +1,29 @@
-# DC Simulator
+# Apollo Simulator
 
-A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. DC Simulator runs OpenBMC services in docker containers and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
+A local datacenter simulator that provides realistic server management capabilities such as BMC services with IPMI and Redfish APIs and a PXE server. Apollo Simulator runs native systemd services and manages QEMU/KVM virtual machines to simulate real datacenter hardware.
 
 ## 🌟 Features
 
 - ✅ **BMC Emulation**: IPMI and Redfish API endpoints
 - ✅ **PXE Network Boot**: Full DHCP/TFTP/HTTP infrastructure  
 - ✅ **KVM Acceleration**: High-performance VM execution
-- ✅ **Ubuntu Installation**: Automated network-based OS deployment
-- ✅ **Container-Based**: Isolated, reproducible environment
+- ✅ **Fast Deployment**: Pre-built Ubuntu images with Packer (3 min build)
+- ✅ **Native Services**: Systemd-based dnsmasq, nginx, and BMC services
 - ✅ **WSL2 Optimized**: Designed for Windows development workflows
 
 ## 🏗️ Architecture
 
 ```text
 ┌─────────────────────────────────────────────────────────────┐
-│                      DC Simulator                           │
+│                   Apollo Simulator                          │
 │                                                              │
 │  ┌────────────────┐  ┌──────────────┐  ┌─────────────────┐ │
 │  │ BMC Services   │  │ PXE Server   │  │ Virtual Machine │ │
-│  │ (Docker)       │  │ (Docker)     │  │ (QEMU/KVM)      │ │
+│  │ (Native)       │  │ (Native)     │  │ (QEMU/KVM)      │ │
 │  │                │  │              │  │                 │ │
-│  │ • IPMI API     │  │ • DHCP       │  │ • Ubuntu 22.04  │ │
-│  │ • Redfish API  │  │ • TFTP       │  │ • Network Boot  │ │
-│  │ • SSH Access   │  │ • HTTP Files │  │ • VNC Console   │ │
+│  │ • Redfish API  │  │ • dnsmasq    │  │ • Ubuntu 22.04  │ │
+│  │ • Flask App    │  │ • DHCP/TFTP  │  │ • Packer Image  │ │
+│  │ • Port 5000    │  │ • nginx HTTP │  │ • VNC Console   │ │
 │  └────────────────┘  └──────────────┘  └─────────────────┘ │
 │         │                    │                   │          │
 │         └────────────────────┴───────────────────┘          │
@@ -35,9 +35,10 @@ A local datacenter simulator that provides realistic server management capabilit
 ## 📋 Prerequisites
 
 - **WSL2** on Windows 10/11
-- **Docker** installed in WSL2
-- **Python 3.8+** with venv support
-- **KVM** support (nested virtualization)
+- **Python 3.8+** with Flask and PyYAML
+- **QEMU/KVM** with nested virtualization enabled
+- **dnsmasq, nginx** for network services
+- **Packer** (optional) for building custom images
 
 > **Note**: Setup automatically downloads ~60MB of Ubuntu 20.04 LTS netboot files for PXE boot functionality. These files are not included in the repository to keep it lightweight.
 
@@ -47,7 +48,7 @@ A local datacenter simulator that provides realistic server management capabilit
 ```bash
 # Clone repository
 git clone <repository>
-cd dc-simulator
+cd apollo-simulator
 
 # Install system dependencies (one-time only)
 make install
@@ -96,26 +97,27 @@ make clean
 ## 📁 Project Structure
 
 ```
-dc-simulator/
-├── 🐳 containers/
-│   ├── openbmc/              # BMC emulation container
-│   │   ├── Dockerfile
-│   │   ├── scripts/          # IPMI & Redfish APIs
-│   │   └── supervisord.conf
-│   └── pxe-server/           # PXE boot services
-│       ├── Dockerfile
-│       ├── config/           # DHCP & HTTP config
-│       └── start.sh
-├── 💾 images/
-│   ├── ubuntu/               # Ubuntu netboot files
-│   └── vms/                  # VM disk images (.qcow2)
-├── 🔧 src/
+apollo-simulator/
+├── � src/
 │   ├── vm_manager.py         # VM lifecycle management
+│   ├── service_manager.py    # Native service orchestration
 │   └── bmc_bridge.py         # BMC to VM integration
+├── 🐳 containers/            # Legacy (not used in Docker-free mode)
+│   ├── openbmc/              # Old BMC container code
+│   └── pxe-server/           # Old PXE container code
+├── 💾 images/
+│   ├── custom/               # Packer-built images
+│   ├── ubuntu/               # Ubuntu netboot files (legacy)
+│   └── vms/                  # VM disk images (.qcow2)
 ├── ⚙️ config/
 │   ├── network.conf          # Network settings
 │   ├── vms.yaml              # VM configurations (runtime state, git-ignored)
 │   └── vms.yaml.template     # Template for vms.yaml
+├── 🔨 packer/
+│   └── airgap-ubuntu.pkr.hcl # Packer template for Ubuntu images
+├── 🌐 pxe-data/
+│   ├── tftp/                 # TFTP boot files
+│   └── http/                 # HTTP served files
 ├── 📜 scripts & utilities
 │   ├── setup.sh              # Environment setup
 │   ├── start.sh              # Start all services
@@ -148,19 +150,17 @@ python3 src/vm_manager.py delete --name <name>
 ### Service Management
 ```bash
 # Recommended: Use make commands
-make start        # Start all services (includes setup)
+make start        # Start all native services
 make stop         # Stop all services
-make restart      # Restart all services
-make status       # Show system status
-make logs         # View service logs
+make status       # Show service status
 make test         # Test system readiness
 
-# Advanced: Direct script access
-./start.sh        # Start services directly
-./stop.sh         # Stop services directly
-docker ps         # View container status
-docker logs bmc-openbmc  # BMC service logs
-docker logs bmc-pxe      # PXE service logs
+# Service management
+sudo systemctl status apollo-dnsmasq  # Check dnsmasq status
+sudo systemctl status apollo-bmc      # Check BMC service status
+sudo systemctl status nginx           # Check nginx status
+sudo journalctl -u apollo-dnsmasq -f  # View dnsmasq logs
+tail -f logs/redfish.log              # View BMC logs
 ```
 
 ### Setup & Cleanup Commands
@@ -193,10 +193,10 @@ make vm-start     # Create another VM (repeat as needed)
 make list-vms     # View all VMs
 
 # 4. Cleanup when done
-make clean        # Complete cleanup (removes everything)
+make clean        # Remove VM disks and logs
+make clean-all    # Complete cleanup (including systemd services)
 
 # Optional: Monitoring and troubleshooting
-make logs         # View service logs
 make status       # Check system health
 make test         # Run system tests
 ```
@@ -205,8 +205,8 @@ make test         # Run system tests
 
 - **Bridge Interface**: `br0` (192.168.100.1/24)
 - **DHCP Range**: 192.168.100.100 - 192.168.100.200
-- **VM Network**: Bridged to `br0` for PXE boot
-- **Container Network**: Host networking for service access
+- **VM Network**: Bridged to `br0` for normal operation, user networking for PXE
+- **Native Services**: dnsmasq on br0, nginx on localhost:8080, BMC on localhost:5000
 
 ## 🐛 Troubleshooting
 
@@ -214,17 +214,16 @@ make test         # Run system tests
 ```bash
 make status       # Check overall system status
 make test         # Run system readiness tests
-make logs         # View all service logs
+sudo journalctl -u apollo-dnsmasq -n 50  # View dnsmasq logs
+tail -f logs/redfish.log  # View BMC logs
 ```
 
 ### Setup Issues
 ```bash
-# If netboot download fails
-make setup-pxe    # Use alternative Ubuntu 20.04 LTS
-
 # Reset everything and start fresh
-make clean
+make clean-all
 make install
+make setup
 make start
 ```
 
@@ -247,11 +246,12 @@ ip route | grep default
 
 ### PXE Boot Issues
 ```bash
-# Check service logs
-make logs
+# Check dnsmasq service
+sudo systemctl status apollo-dnsmasq
+sudo journalctl -u apollo-dnsmasq -f
 
-# Check DHCP server specifically
-docker logs bmc-pxe | grep -i dhcp
+# Check nginx service
+sudo systemctl status nginx
 
 # Verify bridge network
 ip addr show br0
@@ -272,18 +272,21 @@ groups | grep kvm
 qemu-system-x86_64 -enable-kvm -version
 ```
 
-### Container Issues
+### Service Issues
 ```bash
 # Restart services cleanly
 make stop
 make start
 
 # Complete reset
-make cleanup
+make clean-all
+make setup
 make start
 
-# Check container status
-docker ps -a
+# Check individual services
+sudo systemctl status apollo-dnsmasq
+sudo systemctl status apollo-bmc
+sudo systemctl status nginx
 ```
 
 ## 📚 Documentation

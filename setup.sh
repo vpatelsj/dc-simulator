@@ -1,22 +1,26 @@
 #!/bin/bash
 
-# BMC Emulator Setup Script
-# Sets up OpenBMC container and PXE boot environment
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# DEPRECATED: This script is for legacy Docker-based setup
+# Please use the new native systemd-based approach:
+#
+#   make install  # Install system dependencies
+#   make setup    # Setup native services
+#
+# Or directly:
+#   python3 src/service_manager.py setup
 
 echo "=========================================="
-echo "BMC Emulator Setup"
+echo "DEPRECATED: Docker-based setup.sh"
 echo "=========================================="
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+echo ""
+echo "This script uses Docker and is no longer maintained."
+echo ""
+echo "Please use the new native systemd approach:"
+echo "  make install  # Install system dependencies"
+echo "  make setup    # Setup native services"
+echo ""
+echo "Exiting..."
+exit 1
 
 # Check prerequisites
 check_prerequisites() {

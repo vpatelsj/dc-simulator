@@ -1,34 +1,26 @@
 #!/bin/bash
 
-# DC Simulator - Complete Cleanup Script
-# Stops all services, kills VMs, and cleans up resources
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
-
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+# DEPRECATED: This script is for legacy Docker-based setup
+# Please use the new native systemd-based approach:
+#
+#   make clean-all    # Complete cleanup
+#   make clean        # Clean VMs and logs only
+#
+# Or directly:
+#   python3 src/service_manager.py stop
 
 echo "=========================================="
-echo "DC Simulator - Complete Cleanup"
+echo "DEPRECATED: Docker-based cleanup.sh"
 echo "=========================================="
-
-# Detect container engine
-if command -v docker &> /dev/null; then
-    CONTAINER_ENGINE="docker"
-elif command -v podman &> /dev/null; then
-    CONTAINER_ENGINE="podman"
-else
-    echo -e "${RED}Error: Neither Docker nor Podman found${NC}"
-    exit 1
-fi
-
-echo -e "\n${YELLOW}Using: $CONTAINER_ENGINE${NC}"
+echo ""
+echo "This script uses Docker and is no longer maintained."
+echo ""
+echo "Please use the new native systemd approach:"
+echo "  make clean-all    # Complete cleanup (including systemd services)"
+echo "  make clean        # Clean VMs and logs only"
+echo ""
+echo "Exiting..."
+exit 1
 
 # Function to stop all QEMU VMs
 stop_all_vms() {

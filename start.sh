@@ -1,27 +1,27 @@
 #!/bin/bash
 
-# Start all DC Simulator services
-
-set -e
-
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+# DEPRECATED: This script is for legacy Docker-based setup
+# Please use the new native systemd-based approach:
+#
+#   make setup    # First-time setup
+#   make start    # Start all services
+#
+# Or directly:
+#   python3 src/service_manager.py setup
+#   python3 src/service_manager.py start
 
 echo "=========================================="
-echo "Starting DC Simulator Services"
+echo "DEPRECATED: Docker-based start.sh"
 echo "=========================================="
-
-# Detect container engine
-if command -v docker &> /dev/null; then
-    CONTAINER_ENGINE="docker"
-elif command -v podman &> /dev/null; then
-    CONTAINER_ENGINE="podman"
-else
-    echo "Error: Neither Docker nor Podman found"
-    exit 1
-fi
-
-echo "Using: $CONTAINER_ENGINE"
+echo ""
+echo "This script uses Docker and is no longer maintained."
+echo ""
+echo "Please use the new native systemd approach:"
+echo "  make setup    # First-time setup"
+echo "  make start    # Start all services"
+echo ""
+echo "Exiting..."
+exit 1
 
 # Build OpenBMC container
 echo ""
