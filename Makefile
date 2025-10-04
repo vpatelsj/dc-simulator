@@ -1,4 +1,4 @@
-.PHONY: help setup start stop test clean install list-vms cleanup clean-services clean-all
+.PHONY: help setup start stop test clean install list-vms cleanup clean-services clean-all setup-native start-native stop-native status-native
 
 help:
 	@echo "DC Simulator - Available Commands"
@@ -7,13 +7,17 @@ help:
 	@echo "Setup:"
 	@echo "  make install       - Install all dependencies (creates venv)"
 	@echo "  make setup         - Run initial setup (downloads netboot)"
+	@echo "  make setup-native  - Setup native services (dnsmasq, nginx) - NO DOCKER"
 	@echo "  make setup-pxe     - Alternative PXE setup (if netboot fails)"
 	@echo "  make test          - Test system readiness"
 	@echo "  make status        - Show current system status"
+	@echo "  make status-native - Show native services status"
 	@echo ""
 	@echo "Services:"
-	@echo "  make start         - Run setup and start OpenBMC and PXE server"
+	@echo "  make start         - Run setup and start OpenBMC and PXE server (Docker)"
+	@echo "  make start-native  - Start native services (dnsmasq, nginx, BMC) - NO DOCKER"
 	@echo "  make stop          - Stop all services"
+	@echo "  make stop-native   - Stop native services"
 	@echo "  make restart       - Restart all services"
 	@echo "  make logs          - View service logs"
 	@echo ""
@@ -83,6 +87,38 @@ logs:
 	@echo ""
 	@echo "PXE Server logs:"
 	@docker logs --tail 50 bmc-pxe 2>/dev/null || echo "PXE container not running"
+
+# Native services (no Docker)
+setup-native:
+	@echo "Setting up native services..."
+	@if [ -d venv ]; then \
+		./venv/bin/python src/service_manager.py setup; \
+	else \
+		python3 src/service_manager.py setup; \
+	fi
+
+start-native:
+	@echo "Starting native services..."
+	@if [ -d venv ]; then \
+		./venv/bin/python src/service_manager.py start; \
+	else \
+		python3 src/service_manager.py start; \
+	fi
+
+stop-native:
+	@echo "Stopping native services..."
+	@if [ -d venv ]; then \
+		./venv/bin/python src/service_manager.py stop; \
+	else \
+		python3 src/service_manager.py stop; \
+	fi
+
+status-native:
+	@if [ -d venv ]; then \
+		./venv/bin/python src/service_manager.py status; \
+	else \
+		python3 src/service_manager.py status; \
+	fi
 
 list-vms:
 	@if [ -d venv ]; then \

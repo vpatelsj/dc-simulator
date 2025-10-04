@@ -14,9 +14,10 @@ from pathlib import Path
 
 class VMManager:
     def __init__(self, config_path='config/vms.yaml'):
-        self.config_path = config_path
+        self.base_dir = Path(__file__).parent.parent.resolve()  # Apollo simulator root
+        self.config_path = self.base_dir / config_path
         self.load_config()
-        self.vm_dir = Path('images/vms')
+        self.vm_dir = self.base_dir / 'images' / 'vms'
         self.vm_dir.mkdir(parents=True, exist_ok=True)
     
     def load_config(self):
@@ -106,13 +107,30 @@ class VMManager:
             '-m', str(vm_config['memory']),
             '-smp', str(vm_config['cpus']),
             '-drive', f"file={vm_config['disk']},if=virtio,format=qcow2",
-            '-netdev', f"bridge,id=net0,br={vm_config['network']}",
-            '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
+        ]
+        
+        # Network configuration - use user networking for PXE (WSL2 compatibility)
+        if boot_mode in ['pxe', 'pxe-only']:
+            # Use QEMU's built-in TFTP/DHCP for PXE boot
+            tftp_root = str(self.base_dir / 'pxe-data' / 'tftp')
+            cmd.extend([
+                '-netdev', f"user,id=net0,tftp={tftp_root},bootfile=pxelinux.0",
+                '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
+            ])
+            print("Using user networking with built-in TFTP for PXE boot")
+        else:
+            # Use bridge networking for normal operation
+            cmd.extend([
+                '-netdev', f"bridge,id=net0,br={vm_config['network']}",
+                '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
+            ])
+        
+        cmd.extend([
             '-vnc', f":{vm_config['vnc_port']}",
             '-serial', f"telnet::{vm_config['serial_port']},server,nowait",
             '-daemonize',
             '-pidfile', str(self.vm_dir / f"{vm_config['name']}.pid")
-        ]
+        ])
         
         # Add KVM acceleration if available
         if os.path.exists('/dev/kvm'):
