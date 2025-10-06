@@ -1,0 +1,290 @@
+#!/usr/bin/env python3
+"""
+Apollo Provisioning CLI
+Command-line interface for interacting with the provisioning service
+"""
+
+import argparse
+import json
+import sys
+import requests
+from datetime import datetime
+from typing import Optional
+
+PROVISIONING_API = "http://localhost:5001"
+
+
+def format_timestamp(ts_str: str) -> str:
+    """Format ISO timestamp to human-readable"""
+    try:
+        dt = datetime.fromisoformat(ts_str)
+        return dt.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return ts_str
+
+
+def format_size(bytes_size: int) -> str:
+    """Format bytes to human-readable size"""
+    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+        if bytes_size < 1024.0:
+            return f"{bytes_size:.1f} {unit}"
+        bytes_size /= 1024.0
+    return f"{bytes_size:.1f} PB"
+
+
+def list_machines(status: Optional[str] = None):
+    """List all discovered machines"""
+    params = {}
+    if status:
+        params['status'] = status
+    
+    try:
+        response = requests.get(f"{PROVISIONING_API}/api/machines", params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        machines = data.get('machines', [])
+        count = data.get('count', 0)
+        
+        if count == 0:
+            print("No machines found.")
+            if status:
+                print(f"(filtering by status: {status})")
+            return
+        
+        print(f"\n{'=' * 100}")
+        print(f"Discovered Machines: {count}")
+        if status:
+            print(f"Status Filter: {status}")
+        print(f"{'=' * 100}\n")
+        
+        for machine in machines:
+            print(f"MAC Address:  {machine['mac_address']}")
+            print(f"Hostname:     {machine['hostname']}")
+            print(f"Status:       {machine['status'].upper()}")
+            print(f"CPU Cores:    {machine['cpu_count']}")
+            print(f"Memory:       {machine['memory_mb']} MB")
+            
+            if machine.get('disks'):
+                disk_info = ", ".join([
+                    f"{d['device']} ({format_size(d['size'])})"
+                    for d in machine['disks']
+                ])
+                print(f"Disks:        {disk_info}")
+            
+            print(f"Discovered:   {format_timestamp(machine['discovered_at'])}")
+            print(f"Last Seen:    {format_timestamp(machine['last_seen'])}")
+            
+            if machine.get('deployment'):
+                dep = machine['deployment']
+                print(f"\nDeployment:")
+                print(f"  Image:      {dep.get('image', 'N/A')}")
+                print(f"  Status:     {dep.get('status', 'N/A')}")
+                if dep.get('started_at'):
+                    print(f"  Started:    {format_timestamp(dep['started_at'])}")
+                if dep.get('completed_at'):
+                    print(f"  Completed:  {format_timestamp(dep['completed_at'])}")
+            
+            print(f"{'-' * 100}\n")
+    
+    except requests.exceptions.ConnectionError:
+        print("Error: Cannot connect to provisioning service.")
+        print("Make sure the service is running: make start-provisioning")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+def deploy_machine(mac_address: str, image: str = "ubuntu-server-airgap"):
+    """Deploy image to a specific machine"""
+    try:
+        payload = {
+            "mac_address": mac_address,
+            "image": image
+        }
+        
+        response = requests.post(
+            f"{PROVISIONING_API}/api/deploy",
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        )
+        response.raise_for_status()
+        data = response.json()
+        
+        if data.get('status') == 'success':
+            print(f"✓ Deployment initiated successfully")
+            print(f"\nMachine:    {mac_address}")
+            print(f"Image:      {image}")
+            print(f"Image URL:  {data.get('image_url', 'N/A')}")
+            
+            if data.get('deployment'):
+                dep = data['deployment']
+                print(f"Status:     {dep.get('status', 'N/A')}")
+                print(f"Started:    {format_timestamp(dep.get('started_at', ''))}")
+            
+            print("\nThe machine will download and deploy the image on next PXE boot.")
+            print("Monitor progress: apollo-provision status")
+        else:
+            print(f"✗ Deployment failed: {data.get('message', 'Unknown error')}")
+            sys.exit(1)
+    
+    except requests.exceptions.ConnectionError:
+        print("Error: Cannot connect to provisioning service.")
+        print("Make sure the service is running: make start-provisioning")
+        sys.exit(1)
+    except requests.exceptions.HTTPError as e:
+        try:
+            error_data = e.response.json()
+            print(f"✗ Deployment failed: {error_data.get('message', str(e))}")
+        except:
+            print(f"✗ Deployment failed: {e}")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+def show_status():
+    """Show deployment status for all machines"""
+    try:
+        response = requests.get(f"{PROVISIONING_API}/api/machines")
+        response.raise_for_status()
+        data = response.json()
+        
+        machines = data.get('machines', [])
+        
+        # Group by status
+        by_status = {
+            'discovered': [],
+            'deploying': [],
+            'deployed': [],
+            'failed': []
+        }
+        
+        for machine in machines:
+            status = machine.get('status', 'unknown')
+            if status in by_status:
+                by_status[status].append(machine)
+        
+        print(f"\n{'=' * 100}")
+        print("Provisioning Status Overview")
+        print(f"{'=' * 100}\n")
+        
+        print(f"Total Machines: {len(machines)}")
+        print(f"  Discovered:   {len(by_status['discovered'])}")
+        print(f"  Deploying:    {len(by_status['deploying'])}")
+        print(f"  Deployed:     {len(by_status['deployed'])}")
+        print(f"  Failed:       {len(by_status['failed'])}")
+        print()
+        
+        # Show active deployments
+        if by_status['deploying']:
+            print(f"{'=' * 100}")
+            print("Active Deployments")
+            print(f"{'=' * 100}\n")
+            
+            for machine in by_status['deploying']:
+                dep = machine.get('deployment', {})
+                print(f"MAC:       {machine['mac_address']}")
+                print(f"Hostname:  {machine['hostname']}")
+                print(f"Image:     {dep.get('image', 'N/A')}")
+                print(f"Started:   {format_timestamp(dep.get('started_at', ''))}")
+                print()
+        
+        # Show recent completions
+        if by_status['deployed']:
+            print(f"{'=' * 100}")
+            print("Recently Deployed")
+            print(f"{'=' * 100}\n")
+            
+            # Sort by completion time
+            deployed = sorted(
+                by_status['deployed'],
+                key=lambda m: m.get('deployment', {}).get('completed_at', ''),
+                reverse=True
+            )[:5]  # Show last 5
+            
+            for machine in deployed:
+                dep = machine.get('deployment', {})
+                print(f"MAC:       {machine['mac_address']}")
+                print(f"Hostname:  {machine['hostname']}")
+                print(f"Image:     {dep.get('image', 'N/A')}")
+                print(f"Completed: {format_timestamp(dep.get('completed_at', ''))}")
+                print()
+        
+        # Show failures
+        if by_status['failed']:
+            print(f"{'=' * 100}")
+            print("Failed Deployments")
+            print(f"{'=' * 100}\n")
+            
+            for machine in by_status['failed']:
+                dep = machine.get('deployment', {})
+                print(f"MAC:      {machine['mac_address']}")
+                print(f"Hostname: {machine['hostname']}")
+                print(f"Image:    {dep.get('image', 'N/A')}")
+                print(f"Failed:   {format_timestamp(dep.get('completed_at', ''))}")
+                print()
+    
+    except requests.exceptions.ConnectionError:
+        print("Error: Cannot connect to provisioning service.")
+        print("Make sure the service is running: make start-provisioning")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Apollo Provisioning CLI",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  %(prog)s list                              List all discovered machines
+  %(prog)s list --status discovered          List machines ready for deployment
+  %(prog)s deploy 52:54:00:12:34:56          Deploy default image to machine
+  %(prog)s deploy 52:54:00:12:34:56 --image custom-ubuntu
+  %(prog)s status                            Show deployment status overview
+        """
+    )
+    
+    subparsers = parser.add_subparsers(dest='command', help='Command to execute')
+    
+    # List command
+    list_parser = subparsers.add_parser('list', help='List discovered machines')
+    list_parser.add_argument(
+        '--status',
+        choices=['discovered', 'deploying', 'deployed', 'failed'],
+        help='Filter by deployment status'
+    )
+    
+    # Deploy command
+    deploy_parser = subparsers.add_parser('deploy', help='Deploy image to machine')
+    deploy_parser.add_argument('mac_address', help='MAC address of target machine')
+    deploy_parser.add_argument(
+        '--image',
+        default='ubuntu-server-airgap',
+        help='Image name to deploy (default: ubuntu-server-airgap)'
+    )
+    
+    # Status command
+    subparsers.add_parser('status', help='Show deployment status overview')
+    
+    args = parser.parse_args()
+    
+    if not args.command:
+        parser.print_help()
+        sys.exit(1)
+    
+    if args.command == 'list':
+        list_machines(args.status)
+    elif args.command == 'deploy':
+        deploy_machine(args.mac_address, args.image)
+    elif args.command == 'status':
+        show_status()
+
+
+if __name__ == '__main__':
+    main()

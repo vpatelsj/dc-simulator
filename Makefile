@@ -21,7 +21,15 @@ help:
 	@echo "  make vm-delete     - Delete a VM"
 	@echo "  make list-vms      - List all VMs"
 	@echo ""
-	@echo "🔍 Monitoring:"
+	@echo "� Provisioning:"
+	@echo "  make setup-discovery     - Setup discovery environment (Tiny Core Linux)"
+	@echo "  make start-provisioning  - Start provisioning service"
+	@echo "  make stop-provisioning   - Stop provisioning service"
+	@echo "  make list-machines       - List discovered machines"
+	@echo "  make deploy MACHINE=<mac> IMAGE=<name> - Deploy image to machine"
+	@echo "  make provision-status    - Show deployment status"
+	@echo ""
+	@echo "�🔍 Monitoring:"
 	@echo "  make bmc-status    - Check BMC Redfish API"
 	@echo ""
 	@echo "🧹 Cleanup:"
@@ -145,4 +153,47 @@ bmc-set-pxe:
 		-d '{"Boot": {"BootSourceOverrideTarget": "Pxe", "BootSourceOverrideEnabled": "Once"}}' \
 		| python3 -m json.tool
 
-.PHONY: help install setup start stop status test list-vms vm-create vm-stop vm-delete vm-pxe-test clean-vms clean-logs clean-services clean clean-all bmc-status bmc-power-on bmc-power-off bmc-set-pxe
+# Provisioning targets
+setup-discovery:
+	@chmod +x setup_discovery.sh
+	@./setup_discovery.sh
+
+start-provisioning:
+	@echo "Installing provisioning service..."
+	@sudo cp config/apollo-provisioning.service /etc/systemd/system/
+	@sudo systemctl daemon-reload
+	@sudo systemctl enable apollo-provisioning
+	@sudo systemctl start apollo-provisioning
+	@echo "✓ Provisioning service started"
+	@echo ""
+	@sudo systemctl status apollo-provisioning --no-pager
+
+stop-provisioning:
+	@sudo systemctl stop apollo-provisioning
+	@echo "✓ Provisioning service stopped"
+
+list-machines:
+	@echo "Discovered Machines:"
+	@echo "===================="
+	@curl -s http://localhost:5001/api/machines | python3 -m json.tool
+
+deploy:
+	@if [ -z "$(MACHINE)" ]; then \
+		echo "Error: MACHINE parameter required"; \
+		echo "Usage: make deploy MACHINE=<mac_address> [IMAGE=<image_name>]"; \
+		exit 1; \
+	fi
+	@IMAGE=$${IMAGE:-ubuntu-server-airgap}; \
+	echo "Deploying $$IMAGE to $(MACHINE)..."; \
+	curl -X POST http://localhost:5001/api/deploy \
+		-H "Content-Type: application/json" \
+		-d "{\"mac_address\":\"$(MACHINE)\",\"image\":\"$$IMAGE\"}" \
+		| python3 -m json.tool
+
+provision-status:
+	@echo "Machine Status:"
+	@echo "==============="
+	@curl -s http://localhost:5001/api/machines?status=deploying | python3 -m json.tool
+
+.PHONY: help install setup start stop status test list-vms vm-create vm-stop vm-delete vm-pxe-test clean-vms clean-logs clean-services clean clean-all bmc-status bmc-power-on bmc-power-off bmc-set-pxe setup-discovery start-provisioning stop-provisioning list-machines deploy provision-status
+
