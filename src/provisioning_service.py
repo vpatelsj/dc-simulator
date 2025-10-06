@@ -210,12 +210,15 @@ def deploy_machine():
         print(f"  MAC: {machine['mac_address']}")
         print(f"  Hostname: {machine['hostname']}")
         
+        # Use .img extension for raw images
+        image_name = image.replace('.qcow2', '.img')
+        
         # Return deployment instructions for the machine
         return jsonify({
             'status': 'deploying',
             'machine_id': machine_id,
-            'image': image,
-            'image_url': f'http://192.168.100.1:8080/images/{image}',
+            'image': image_name,
+            'image_url': f'http://192.168.100.1:8080/images/{image_name}',
             'instructions': 'PXE boot and select deployment option'
         })
     
