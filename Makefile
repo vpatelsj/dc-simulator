@@ -133,10 +133,10 @@ clean:
 	@sudo python3 src/service_manager.py stop
 	@sudo systemctl stop apollo-provisioning || true
 	@echo "Services stopped. Killing VMs..."
-	@sudo pkill -f 'qemu-system-x86_64' || true
 	@echo "VMs killed. Cleaning repository..."
 	@sudo git clean -fdx
 	@rm -f data/machine_inventory.json
+	@sudo pkill -f 'qemu-system-x86_64' || true
 	@echo "✓ System cleaned"
 
 clean-all: clean-services clean
