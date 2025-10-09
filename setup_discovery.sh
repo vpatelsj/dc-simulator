@@ -172,7 +172,15 @@ find . | cpio -o -H newc | gzip > "$DISCOVERY_DIR/core.gz"
 cd "$SCRIPT_DIR"
 rm -rf "$WORK_DIR"
 
-echo "✓ Custom initramfs created"
+# Set ownership of generated files
+echo "Setting ownership of generated files..."
+if [ -n "$SUDO_USER" ]; then
+    chown -R "$SUDO_USER:$SUDO_USER" "$SCRIPT_DIR/pxe-data"
+    echo "✓ Ownership set to $SUDO_USER"
+fi
+
+echo "✓ Discovery environment setup complete"
+
 echo ""
 
 # Update PXE menu

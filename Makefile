@@ -1,10 +1,7 @@
 .PHONY: help setup start stop status test clean install list-vms vm-create vm-start vm-stop vm-delete bmc-status
 
 help:
-	@echo "╔══════════════════════════════════════════════════════════╗"
-	@echo "║     Apollo Simulator - Docker-Free Edition              ║"
-	@echo "╚══════════════════════════════════════════════════════════╝"
-	@echo ""
+
 	@echo "🔧 Setup:"
 	@echo "  make install       - Install system dependencies"
 	@echo "  make setup         - Setup native services (dnsmasq, nginx, BMC)"
@@ -33,7 +30,7 @@ help:
 	@echo "  make bmc-status    - Check BMC Redfish API"
 	@echo ""
 	@echo "🧹 Cleanup:"
-	@echo "  make clean         - Clean VM disks and logs"
+	@echo "  make clean         - Stop services, kill VMs, and git clean -fdx"
 	@echo "  make clean-all     - Complete cleanup (including venv)"
 	@echo ""
 
@@ -127,8 +124,14 @@ clean-services:
 	@sudo systemctl daemon-reload
 	@echo "✓ Services cleaned up"
 
-clean: clean-vms clean-logs
-	@echo "✓ Cleaned"
+clean:
+	@echo "Stopping services, killing VMs, and cleaning repository..."
+	@sudo python3 src/service_manager.py stop
+	@echo "Services stopped. Killing VMs..."
+	@sudo pkill -f 'qemu-system-x86_64' || true
+	@echo "VMs killed. Cleaning repository..."
+	@sudo git clean -fdx
+	@echo "✓ System cleaned"
 
 clean-all: clean-services clean
 	@echo "✓ Complete cleanup done"
@@ -156,7 +159,7 @@ bmc-set-pxe:
 # Provisioning targets
 setup-discovery:
 	@chmod +x setup_discovery.sh
-	@./setup_discovery.sh
+	@sudo ./setup_discovery.sh
 
 start-provisioning:
 	@echo "Installing provisioning service..."
