@@ -272,7 +272,7 @@ if __name__ == '__main__':
     print("  Apollo Simulator - Provisioning Service")
     print("="*60)
     print()
-    print("Starting provisioning service on port 5001...")
+    print("Starting provisioning service on port 5100...")
     print("Endpoints:")
     print("  POST /api/discover        - Machine discovery")
     print("  GET  /api/machines        - List machines")
@@ -280,4 +280,4 @@ if __name__ == '__main__':
     print("  POST /api/deployment/status - Update deployment status")
     print()
     
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5100, debug=True)

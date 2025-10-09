@@ -62,11 +62,80 @@ mount -t proc proc /proc
 mount -t sysfs sysfs /sys
 mount -t devtmpfs devtmpfs /dev
 
+# Prepare module dependency data
+if command -v depmod >/dev/null 2>&1; then
+    depmod -a 2>/dev/null || true
+fi
+
 # Setup network
 echo "Configuring network..."
-ip link set lo up
-ip link set eth0 up
-udhcpc -i eth0 -q -n
+
+# Ensure loopback is up
+ip link set lo up 2>/dev/null || ifconfig lo up 2>/dev/null
+
+# Load common virtual NIC drivers
+load_module() {
+    mod="$1"
+    if command -v modprobe >/dev/null 2>&1 && modprobe -n "$mod" >/dev/null 2>&1; then
+        if modprobe "$mod" >/dev/null 2>&1; then
+            echo "Loaded module via modprobe: $mod"
+            return 0
+        fi
+    fi
+    if command -v find >/dev/null 2>&1; then
+        for path in $(find /lib/modules -type f -name "${mod}.ko" -o -name "${mod}.ko.gz" 2>/dev/null); do
+            if printf '%s' "$path" | grep -q '\.gz$'; then
+                tmp="/tmp/${mod}.ko"
+                gzip -dc "$path" > "$tmp" 2>/dev/null || continue
+                insmod "$tmp" >/dev/null 2>&1 && {
+                    echo "Loaded module via insmod: $mod";
+                    rm -f "$tmp"
+                    return 0
+                }
+                rm -f "$tmp"
+            else
+                insmod "$path" >/dev/null 2>&1 && {
+                    echo "Loaded module via insmod: $mod";
+                    return 0
+                }
+            fi
+        done
+    fi
+    return 1
+}
+
+for module in mii mdio virtio_net virtio_pci virtio_ring e1000 e1000e 8139cp 8139too; do
+    load_module "$module" || true
+done
+
+# Detect primary interface
+PRIMARY_IF=""
+for attempt in 1 2 3 4 5 6 7 8 9 10; do
+    for iface_path in /sys/class/net/*; do
+        iface="$(basename "$iface_path")"
+        case "$iface" in
+            lo|dummy*|sit*|tun*|tap*|virbr*|veth*|vmnet*|vbox*|br*|docker*|zt*|wg*)
+                continue
+                ;;
+        esac
+        PRIMARY_IF="$iface"
+        break
+    done
+    [ -n "$PRIMARY_IF" ] && break
+    sleep 1
+done
+
+if [ -z "$PRIMARY_IF" ]; then
+    echo "WARNING: No usable network interface detected"
+else
+    echo "Using network interface: $PRIMARY_IF"
+    ip link set "$PRIMARY_IF" up 2>/dev/null || ifconfig "$PRIMARY_IF" up 2>/dev/null
+    if command -v udhcpc >/dev/null 2>&1; then
+        udhcpc -i "$PRIMARY_IF" -q -n || true
+    fi
+fi
+
+export DISCOVERY_IF="$PRIMARY_IF"
 
 # Run discovery
 clear

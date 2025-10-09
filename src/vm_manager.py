@@ -109,21 +109,12 @@ class VMManager:
             '-drive', f"file={vm_config['disk']},if=virtio,format=qcow2",
         ]
         
-        # Network configuration - use user networking for PXE (WSL2 compatibility)
-        if boot_mode in ['pxe', 'pxe-only']:
-            # Use QEMU's built-in TFTP/DHCP for PXE boot
-            tftp_root = str(self.base_dir / 'pxe-data' / 'tftp')
-            cmd.extend([
-                '-netdev', f"user,id=net0,tftp={tftp_root},bootfile=pxelinux.0",
-                '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
-            ])
-            print("Using user networking with built-in TFTP for PXE boot")
-        else:
-            # Use bridge networking for normal operation
-            cmd.extend([
-                '-netdev', f"bridge,id=net0,br={vm_config['network']}",
-                '-device', f"virtio-net-pci,netdev=net0,mac={vm_config['mac']}",
-            ])
+        # Network configuration - use bridge networking for PXE discovery and provisioning
+        # This allows VMs to reach dnsmasq DHCP/TFTP and the provisioning service
+        cmd.extend([
+            '-netdev', f"bridge,id=net0,br={vm_config['network']}",
+            '-device', f"e1000,netdev=net0,mac={vm_config['mac']}",
+        ])
         
         cmd.extend([
             '-vnc', f":{vm_config['vnc_port']}",
