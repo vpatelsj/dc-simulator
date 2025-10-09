@@ -1,2 +1,0 @@
-# This file ensures the http directory exists in git
-# PXE HTTP files will be generated at runtime

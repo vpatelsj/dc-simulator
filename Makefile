@@ -1,6 +1,7 @@
-.PHONY: help setup start stop status test clean install list-vms vm-create vm-start vm-stop vm-delete bmc-status
+.PHONY: help setup start stop status test clean install list-vms vm-create vm-start vm-stop vm-delete bmc-status setup-all
 
 help:
+	@echo "  make setup-all     - Run all setup steps"
 
 	@echo "🔧 Setup:"
 	@echo "  make install       - Install system dependencies"
@@ -33,6 +34,9 @@ help:
 	@echo "  make clean         - Stop services, kill VMs, and git clean -fdx"
 	@echo "  make clean-all     - Complete cleanup (including venv)"
 	@echo ""
+
+setup-all: setup setup-discovery start start-provisioning
+	@echo "✓ All services started"
 
 install:
 	@echo "Installing system dependencies..."

@@ -1,3 +1,0 @@
-# Ubuntu netboot files directory
-# Files will be downloaded automatically during setup.sh
-# This directory should contain PXE boot files for Ubuntu installation
