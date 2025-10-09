@@ -51,7 +51,7 @@ zcat "$DISCOVERY_DIR/core.gz.orig" | cpio -id
 # Customize the initramfs
 echo "Adding discovery script..."
 mkdir -p opt/discovery
-cp "$DISCOVERY_DIR/discovery.sh" opt/discovery/
+cp "$SCRIPT_DIR/scripts/discovery.sh" opt/discovery/
 chmod +x opt/discovery/discovery.sh
 
 # Create custom init script that runs discovery
