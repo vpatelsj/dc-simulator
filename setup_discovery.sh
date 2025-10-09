@@ -189,6 +189,15 @@ echo "Updating PXE boot menu..."
 MENU_FILE="$SCRIPT_DIR/pxe-data/tftp/pxelinux.cfg/default"
 mkdir -p "$(dirname "$MENU_FILE")"
 
+# Create default PXE menu if it doesn't exist
+if [ ! -f "$MENU_FILE" ]; then
+    cat > "$MENU_FILE" <<'MENUEOF'
+UI vesamenu.c32
+MENU TITLE Apollo PXE Boot
+DEFAULT discovery
+MENUEOF
+fi
+
 # Check if discovery menu already exists
 if ! grep -q "LABEL discovery" "$MENU_FILE"; then
     cat >> "$MENU_FILE" <<'MENUEOF'

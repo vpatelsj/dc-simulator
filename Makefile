@@ -127,10 +127,12 @@ clean-services:
 clean:
 	@echo "Stopping services, killing VMs, and cleaning repository..."
 	@sudo python3 src/service_manager.py stop
+	@sudo systemctl stop apollo-provisioning || true
 	@echo "Services stopped. Killing VMs..."
 	@sudo pkill -f 'qemu-system-x86_64' || true
 	@echo "VMs killed. Cleaning repository..."
 	@sudo git clean -fdx
+	@rm -f data/machine_inventory.json
 	@echo "✓ System cleaned"
 
 clean-all: clean-services clean
@@ -178,7 +180,7 @@ stop-provisioning:
 list-machines:
 	@echo "Discovered Machines:"
 	@echo "===================="
-	@curl -s http://localhost:5001/api/machines | python3 -m json.tool
+	@curl -s http://localhost:5100/api/machines | python3 -m json.tool
 
 deploy:
 	@if [ -z "$(MACHINE)" ]; then \
@@ -188,7 +190,7 @@ deploy:
 	fi
 	@IMAGE=$${IMAGE:-ubuntu-server-airgap}; \
 	echo "Deploying $$IMAGE to $(MACHINE)..."; \
-	curl -X POST http://localhost:5001/api/deploy \
+	curl -X POST http://localhost:5100/api/deploy \
 		-H "Content-Type: application/json" \
 		-d "{\"mac_address\":\"$(MACHINE)\",\"image\":\"$$IMAGE\"}" \
 		| python3 -m json.tool
@@ -196,7 +198,7 @@ deploy:
 provision-status:
 	@echo "Machine Status:"
 	@echo "==============="
-	@curl -s http://localhost:5001/api/machines?status=deploying | python3 -m json.tool
+	@curl -s http://localhost:5100/api/machines?status=deploying | python3 -m json.tool
 
 .PHONY: help install setup start stop status test list-vms vm-create vm-stop vm-delete vm-pxe-test clean-vms clean-logs clean-services clean clean-all bmc-status bmc-power-on bmc-power-off bmc-set-pxe setup-discovery start-provisioning stop-provisioning list-machines deploy provision-status
 
