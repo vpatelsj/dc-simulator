@@ -37,6 +37,20 @@ else
     fi
 fi
 
+# Copy PXE bootloader files from local system if they exist
+if [ -f "/usr/lib/PXELINUX/pxelinux.0" ] && [ -f "/usr/lib/syslinux/modules/bios/ldlinux.c32" ] && [ -f "/usr/lib/syslinux/modules/bios/libutil.c32" ] && [ -f "/usr/lib/syslinux/modules/bios/libcom32.c32" ] && [ -f "/usr/lib/syslinux/modules/bios/vesamenu.c32" ]; then
+    echo "Copying PXE bootloader files from local system..."
+    cp "/usr/lib/PXELINUX/pxelinux.0" "$SCRIPT_DIR/pxe-data/tftp/"
+    cp "/usr/lib/syslinux/modules/bios/ldlinux.c32" "$SCRIPT_DIR/pxe-data/tftp/"
+    cp "/usr/lib/syslinux/modules/bios/libutil.c32" "$SCRIPT_DIR/pxe-data/tftp/"
+    cp "/usr/lib/syslinux/modules/bios/libcom32.c32" "$SCRIPT_DIR/pxe-data/tftp/"
+    cp "/usr/lib/syslinux/modules/bios/vesamenu.c32" "$SCRIPT_DIR/pxe-data/tftp/"
+    echo "✓ PXE bootloader files copied"
+else
+    echo "PXE bootloader files not found locally. Please run 'sudo apt-get install pxelinux syslinux-common' to install them."
+    exit 1
+fi
+
 # Create custom initramfs with discovery script
 echo ""
 echo "Building custom initramfs with discovery script..."
@@ -165,6 +179,7 @@ echo ""
 echo "Updating PXE boot menu..."
 
 MENU_FILE="$SCRIPT_DIR/pxe-data/tftp/pxelinux.cfg/default"
+mkdir -p "$(dirname "$MENU_FILE")"
 
 # Check if discovery menu already exists
 if ! grep -q "LABEL discovery" "$MENU_FILE"; then
