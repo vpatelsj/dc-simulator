@@ -37,19 +37,8 @@ cd containers/pxe-server
 $CONTAINER_ENGINE build -t dc-pxe .
 cd "$SCRIPT_DIR"
 
-# Create network if it doesn't exist
-echo ""
-echo "Setting up container network..."
-if ! $CONTAINER_ENGINE network inspect bmc-net &> /dev/null; then
-    $CONTAINER_ENGINE network create \
-        --driver bridge \
-        --subnet 192.168.100.0/24 \
-        --gateway 192.168.100.1 \
-        bmc-net
-    echo "Created network: bmc-net"
-else
-    echo "Network already exists: bmc-net"
-fi
+# Note: Containers use --network host, so no Docker network needed
+# The manual bridge br0 is created later for VMs
 
 # Clean up any existing containers
 echo ""
@@ -131,6 +120,21 @@ if [ -n "$MAIN_IFACE" ]; then
     
     if ! sudo iptables -C FORWARD -i "$MAIN_IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null; then
         sudo iptables -A FORWARD -i "$MAIN_IFACE" -o br0 -m state --state RELATED,ESTABLISHED -j ACCEPT
+    fi
+    
+    # Allow traffic within br0 (VM to host, VM to VM) - critical for PXE boot
+    if ! sudo iptables -C FORWARD -i br0 -o br0 -j ACCEPT 2>/dev/null; then
+        sudo iptables -I FORWARD 1 -i br0 -o br0 -j ACCEPT
+    fi
+    
+    # Allow traffic from br0 to host (for TFTP, DHCP, etc.)
+    if ! sudo iptables -C INPUT -i br0 -j ACCEPT 2>/dev/null; then
+        sudo iptables -I INPUT 1 -i br0 -j ACCEPT
+    fi
+    
+    # Allow traffic from host to br0
+    if ! sudo iptables -C OUTPUT -o br0 -j ACCEPT 2>/dev/null; then
+        sudo iptables -I OUTPUT 1 -o br0 -j ACCEPT
     fi
     
     # Disable bridge netfilter
